@@ -646,6 +646,8 @@ window.FORJA_ES = Object.assign(window.FORJA_ES || {}, {
   "Today makes it a <b>{next}-day streak</b>. No pressure.": "Hoy llegas a una <b>racha de {next} días</b>. Sin presión.",
   "<b>{n} more days</b> and you hit a {next}-day streak. Today counts.": "<b>{n} días más</b> y llegas a una racha de {next} días. Hoy cuenta.",
   "Day <b>{n}</b> done. See you tomorrow.": "Día <b>{n}</b> completado. Nos vemos mañana.",
+  "Day complete! See you tomorrow.": "¡Día completado! Nos vemos mañana.",
+  "Minimums hit! Saving your day...": "¡Mínimos cumplidos! Guardando tu día...",
   "<b>Level up!</b> Tomorrow: {pushups} push-ups · {plank} plank · {squats} squats.": "<b>¡Subiste de nivel!</b> Mañana: {pushups} flexiones · {plank} de plancha · {squats} sentadillas.",
   "Day <b>{n}</b> done. Level up in <b>{days}</b>.": "Día <b>{n}</b> completado. Subes de nivel en <b>{days}</b>.",
   "That's it for today. Go brag to someone.": "Eso es todo por hoy. Ve a presumirle a alguien.",

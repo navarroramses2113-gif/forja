@@ -1520,9 +1520,9 @@ function render() {
   // The line under the ring only shows while the day saves (and "Day
   // complete!" when the pet coach isn't there to say it).
   if (loggedToday) {
-    statusMessageEl.textContent = "Day complete! See you tomorrow.";
+    statusMessageEl.textContent = tr("Day complete! See you tomorrow.");
   } else if (savingDay) {
-    statusMessageEl.textContent = "Minimums hit! Saving your day...";
+    statusMessageEl.textContent = tr("Minimums hit! Saving your day...");
   } else {
     statusMessageEl.textContent = "";
   }
@@ -4598,7 +4598,17 @@ document.addEventListener("click", (event) => {
   if (!eye) return;
   const field = eye.closest(".password-field");
   const showing = field.classList.toggle("showing");
-  field.querySelector("input").type = showing ? "text" : "password";
+  const input = field.querySelector("input");
+  // Changing the type makes the phone's keyboard send the cursor back to
+  // the first letter a moment later (before the next frame): put it back
+  // where it was, then and once more on that frame.
+  const { selectionStart, selectionEnd } = input;
+  input.type = showing ? "text" : "password";
+  const keepCursor = () => {
+    if (document.activeElement === input) input.setSelectionRange(selectionStart, selectionEnd);
+  };
+  keepCursor();
+  requestAnimationFrame(keepCursor);
   eye.setAttribute("aria-label", showing ? tr("Hide password") : tr("Show password"));
 });
 
@@ -5310,13 +5320,38 @@ async function enterRecordTab() {
   showPreviewLocation();
 }
 
+// Location is asked for when a walk starts, not when the tab opens (Apple
+// and Google both want the ask tied to the feature). Remembered once a
+// position comes back, since the store app's browser can't always tell
+// whether it was allowed.
+const LOCATION_OK_KEY = "forja-location-ok";
+function rememberLocationOk() {
+  try {
+    localStorage.setItem(LOCATION_OK_KEY, "true");
+  } catch (e) {
+    // storage blocked - the preview dot just waits for the next Start
+  }
+}
+async function locationAllowed() {
+  try {
+    if (localStorage.getItem(LOCATION_OK_KEY)) return true;
+  } catch (e) {}
+  try {
+    return (await navigator.permissions.query({ name: "geolocation" })).state === "granted";
+  } catch (e) {
+    return false;
+  }
+}
+
 // Shows a single marker at your current position, before tracking has
-// started - literally the "preview" of where a run would begin.
-function showPreviewLocation() {
-  if (!("geolocation" in navigator)) return;
+// started - literally the "preview" of where a run would begin. Only once
+// location is allowed: looking at the tab never brings up the ask.
+async function showPreviewLocation() {
+  if (!("geolocation" in navigator) || !(await locationAllowed())) return;
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
+      rememberLocationOk();
       const point = [position.coords.latitude, position.coords.longitude];
       recordMap.setView(point, 16);
       if (previewMarker) {
@@ -5480,6 +5515,7 @@ trackingPauseEl.addEventListener("click", () => {
 });
 
 function onTrackingPosition(position) {
+  if (session.route.length === 0) rememberLocationOk();
   const { latitude, longitude, altitude } = position.coords;
   const point = [latitude, longitude];
   const previousPoint = session.route[session.route.length - 1];
