@@ -597,7 +597,8 @@ const Challenges = (function () {
     const reply = await callServerFunction("challenge", { action: "respond", challengeId: id, accept, timeZone: timeZone() });
     closeInvite();
     if (!reply.ok) toast(errorText(reply));
-    else if (accept) toast(tr("You're in. Starts tomorrow"));
+    // A friend a few time zones ahead can join on their own day 1.
+    else if (accept) toast(tr(reply.startDay && reply.startDay <= todayString() ? "You're in. Starts today" : "You're in. Starts tomorrow"));
     await load();
     renderList();
   }

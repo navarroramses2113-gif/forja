@@ -4587,6 +4587,27 @@ const authSubtitleEl = document.getElementById("auth-subtitle");
 const authForgotPasswordEl = document.getElementById("auth-forgot-password");
 const logOutButtonEl = document.getElementById("log-out-button");
 
+// The keyboard's Next / Go key (2026-11-04): Enter in a sign-in box moves
+// to the next box, and from the last one presses the screen's main button,
+// so nobody has to close the keyboard to find Log In. Page-wide, like the
+// eye below, so it also works in sign-up. A disabled button stays put.
+const ENTER_FLOWS = [
+  ["#auth-email", "#auth-password", "#auth-submit"],
+  ["#forgot-password-email", "#forgot-password-submit"],
+  ["#new-password", "#reset-password-submit"],
+  ["#ob-username", "#ob-email", "#ob-password", '[data-action="create"], [data-action="save-username"]'],
+];
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || event.isComposing || !event.target.matches("input")) return;
+  const flow = ENTER_FLOWS.find((steps) => event.target.matches(steps[0]) || steps.slice(1, -1).some((s) => event.target.matches(s)));
+  if (!flow) return;
+  event.preventDefault();
+  const next = flow.slice(flow.findIndex((s) => event.target.matches(s)) + 1).map((s) => document.querySelector(s)).find(Boolean);
+  if (!next) return;
+  if (next.matches("input")) next.focus();
+  else if (!next.disabled) next.click();
+});
+
 // The eye button in a password box shows or hides what's typed. Listens on
 // the whole page so it also works in sign-up, which onboarding.js redraws.
 // Pressing it doesn't take focus from the box, so the keyboard stays up.
@@ -5027,6 +5048,12 @@ function routeShapeSvg(encoded) {
 // is drawn once per theme. Until the picture is ready, and whenever the map
 // can't be drawn (no WebGL, offline, the service is down), the card keeps
 // the plain line.
+//
+// SECURITY (2026-11-04): MapLibre up to 6.4.0 has a critical XSS hole
+// (GHSA-jrc7-96c5-q579) in the HTML cleaner used by popups and the
+// attribution control. Unreachable here only because the map has neither
+// (attributionControl: false, no Popup/setHTML). Don't add either before
+// upgrading MapLibre or replacing it (Apple Maps is the plan).
 const MAPLIBRE_SCRIPT = {
   src: "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js",
   // The browser refuses the file unless it's exactly this one.

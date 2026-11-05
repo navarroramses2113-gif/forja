@@ -398,11 +398,20 @@ async function respond(deps: Deps, userId: string, body: Row): Promise<Reply> {
   if (!invite || invite.status !== "invited") return fail("not_invited", 404);
   const { data: challenge } = await admin.from("challenges").select("*").eq("id", body.challengeId).maybeSingle();
   if (!challenge) return fail("not_found", 404);
-  // Invites close when the challenge starts.
+  // Invites close when the challenge starts: once a joined player's day 1
+  // has begun (same check as cancel and the 15-minute check). The
+  // invitee's own date doesn't close it - a friend a few zones ahead is
+  // already on day 1 when it's still "tomorrow" for the creator, and joins
+  // with that day's hours left (2026-11-04). Only a day 1 that's already
+  // over for them is too late.
   const startDay = dayString(challenge.start_day);
   if (challenge.status !== "pending") return fail("closed", 409);
   if (accept) {
-    if (rules.localDate(body.timeZone, now) >= startDay) return fail("closed", 409);
+    const { data: players, error } = await admin.from("challenge_players").select("user_id, time_zone").eq("challenge_id", challenge.id).eq("status", "joined");
+    if (error) throw new Error(error.message);
+    const joined = (players || []).map((p: Row) => ({ userId: p.user_id, timeZone: p.time_zone }));
+    if (rules.pendingAction(challengeOf(challenge), joined, now) !== "wait") return fail("closed", 409);
+    if (rules.localDate(body.timeZone, now) > startDay) return fail("closed", 409);
     if ((await activeCount(admin, userId)) >= rules.CHALLENGE_RULES.maxActive) return fail("too_many", 409);
   }
 

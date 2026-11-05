@@ -276,8 +276,8 @@ window.FORJA_ES = Object.assign(window.FORJA_ES || {}, {
 
   // ---------- Me tab: progress, distance, calendar ----------
   "{date} · rest day": "{date} · día de descanso",
-  "M T W T F S S": "L M X J V S D",
-  "S M T W T F S": "D L M X J V S",
+  "M T W T F S S": "L M M J V S D",
+  "S M T W T F S": "D L M M J V S",
   "Week of {date}": "Semana del {date}",
   "1 walk or run": "1 caminata o carrera",
   "{n} walks or runs": "{n} caminatas o carreras",
@@ -769,6 +769,7 @@ window.FORJA_ES = Object.assign(window.FORJA_ES || {}, {
   "A friend": "Un amigo",
   "{n} players": "{n} jugadores",
   "You're in. Starts tomorrow": "Estás dentro. Empieza mañana",
+  "You're in. Starts today": "Estás dentro. Empieza hoy",
   "Nobody joined, so it didn't start": "Nadie se unió, así que no empezó",
   "Your challenge": "Tu reto",
   "{n} of {total}": "{n} de {total}",

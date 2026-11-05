@@ -512,7 +512,7 @@
   // The example week's letters (a lookup can't tell Tuesday's T from Thursday's).
   if (ForjaI18n.lang === "es") {
     document.querySelectorAll(".streak-row span").forEach((day, i) => {
-      if (!day.classList.contains("rest")) day.textContent = ["L", "M", "X", "J", "V", "S", "D"][i];
+      if (!day.classList.contains("rest")) day.textContent = ["L", "M", "M", "J", "V", "S", "D"][i];
     });
   }
 

@@ -363,17 +363,17 @@ const Onboarding = (function () {
       body: () => {
         if (state.usernameOnly) {
           return `${coach(tr("Your account is ready. Pick a username so friends can find you."))}
-            <div class="auth-fields"><input id="ob-username" placeholder="${tr("Username")}" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" aria-describedby="ob-username-hint">
+            <div class="auth-fields"><input id="ob-username" enterkeyhint="done" placeholder="${tr("Username")}" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" aria-describedby="ob-username-hint">
             <p id="ob-username-hint" class="ob-fine" aria-live="polite" hidden></p></div>${errorLine()}`;
         }
         // Sign in with Apple goes first here once there's an Apple Developer account.
         return `${coach(tr("Save your plan so your streak follows you, and so you can compete with friends."))}
           <div class="auth-fields">
-            <input id="ob-username" placeholder="${tr("Username")}" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" aria-describedby="ob-username-hint">
+            <input id="ob-username" enterkeyhint="next" placeholder="${tr("Username")}" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" aria-describedby="ob-username-hint">
             <p id="ob-username-hint" class="ob-fine" aria-live="polite" hidden></p>
-            <input id="ob-email" type="email" placeholder="${tr("Email")}" autocomplete="email">
+            <input id="ob-email" type="email" enterkeyhint="next" placeholder="${tr("Email")}" autocomplete="email">
             <div class="password-field">
-              <input id="ob-password" type="password" placeholder="${tr("Password (8+ letters and numbers)")}" autocomplete="new-password">
+              <input id="ob-password" type="password" enterkeyhint="go" placeholder="${tr("Password (8+ letters and numbers)")}" autocomplete="new-password">
               <button type="button" class="password-eye" aria-label="${tr("Show password")}"><svg class="eye-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-6.5 0-10-7-10-7a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg></button>
             </div>
             <p id="ob-password-hint" class="ob-fine" aria-live="polite" hidden></p>
