@@ -1,40 +1,29 @@
-# Netlify publishes every file in this repo, but the site only needs the
-# app. The server's code and SQL stay off it: they hold no secrets, this
-# just keeps how the server works to ourselves. "404!" answers "not found"
-# even though the file exists.
+# Netlify publishes the whole repo. The site only needs the app: server
+# code and SQL stay off it. They hold no secrets; this just keeps how the
+# server works to ourselves. "404!" answers "not found" even though the
+# file exists.
 #
-# The app DOES load two files from supabase/functions/_shared/
-# (game-rules.js and exercise-counter.js), so that folder is closed file by
-# file instead of all at once. A new Edge Function folder or a new file in
-# _shared needs a line here; new SQL goes in supabase/sql/ and is covered.
+# Old addresses (Home Screen apps still holding a previous version) rewrite
+# to the new folders so a stale tab doesn't break. "200" keeps the old
+# address in the bar; the file comes from the new place.
+# A new Edge Function folder needs no new line here: /supabase/* covers it.
 
-/supabase/sql/*                            /404.html  404!
-/supabase/config.toml                      /404.html  404!
-/supabase/.gitignore                       /404.html  404!
+/style.css                                      /css/style.css  200
+/script.js                                      /js/script.js  200
+/camera-verify.js                               /js/camera-verify.js  200
+/celebrations.js                                /js/celebrations.js  200
+/challenges.js                                  /js/challenges.js  200
+/onboarding.js                                  /js/onboarding.js  200
+/home-screen-guide.js                           /js/home-screen-guide.js  200
+/setup-scenes.js                                /js/setup-scenes.js  200
+/i18n.js                                        /i18n/i18n.js  200
+/i18n-es.js                                     /i18n/i18n-es.js  200
+/i18n-guide-es.js                               /i18n/i18n-guide-es.js  200
+/i18n-landing-es.js                             /i18n/i18n-landing-es.js  200
+/supabase/functions/_shared/game-rules.js       /shared/game-rules.js  200
+/supabase/functions/_shared/exercise-counter.js /shared/exercise-counter.js  200
 
-/supabase/functions/challenge/*            /404.html  404!
-/supabase/functions/challenge-tick/*       /404.html  404!
-/supabase/functions/delete-account/*       /404.html  404!
-/supabase/functions/invite/*               /404.html  404!
-/supabase/functions/log-activity/*         /404.html  404!
-/supabase/functions/log-day/*              /404.html  404!
-/supabase/functions/notify-friend-request/* /404.html  404!
-/supabase/functions/nudge/*                /404.html  404!
-/supabase/functions/plan/*                 /404.html  404!
-/supabase/functions/send-reminders/*       /404.html  404!
-/supabase/functions/submit-set/*           /404.html  404!
-/supabase/functions/waitlist/*             /404.html  404!
-/supabase/functions/weekly-recap/*         /404.html  404!
-
-/supabase/functions/_shared/challenges.ts  /404.html  404!
-/supabase/functions/_shared/http.ts        /404.html  404!
-/supabase/functions/_shared/invite.ts      /404.html  404!
-/supabase/functions/_shared/nudge.ts       /404.html  404!
-/supabase/functions/_shared/pet-voice.ts   /404.html  404!
-/supabase/functions/_shared/plan.ts        /404.html  404!
-/supabase/functions/_shared/push.ts        /404.html  404!
-/supabase/functions/_shared/waitlist.ts    /404.html  404!
-/supabase/functions/_shared/weekly.ts      /404.html  404!
+/supabase/*                                     /404.html  404!
 
 # The front page. getforja.app/ shows landing.html; the app stays at
 # /index.html (the Home Screen app opens that, see manifest.json). An invite

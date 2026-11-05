@@ -1,6 +1,6 @@
 // The in-app camera screen: records one verified set of an exercise and
 // hands the result back. All the "is this a real rep" logic lives in
-// supabase/functions/_shared/exercise-counter.js (the same file the server
+// shared/exercise-counter.js (the same file the server
 // runs to recount every set); this file is just the camera, the pose model
 // and the on-screen feedback around it. Nothing here ever uploads video -
 // the pose model runs on the device, and all that's sent is the recorded

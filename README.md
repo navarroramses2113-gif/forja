@@ -1,43 +1,64 @@
 # Forja
 
-A daily accountability app for building a workout habit without the friction
-of the gym. Log a quick set of bodyweight exercises — push-ups, planks,
-squats — each day to keep your streak alive.
+A daily accountability app: a few minutes of bodyweight work at home,
+camera-verified reps, a streak, and friends. Live at
+https://getforja.app/
 
-**Live app:** https://getforja.app/
+Push-ups, planks and squats are required; walk/run is optional and
+GPS-tracked. Competing days have floors (5 / 20s / 10) and two forgiven
+rest days per Monday–Sunday week.
 
-## Features
+## Layout
 
-- Try the full app as a guest before creating an account — signup is offered
-  after your first completed day, not required upfront
-- Daily streak tracking with a "best streak" personal record
-- Customizable daily minimums per exercise
-- 2 forgiven rest days per rolling week, so one busy day doesn't reset months of progress
-- 8-week history heatmap
-- Real accounts backed by Supabase (Postgres + auth), so progress syncs
-  across devices instead of living only in one browser
-- Installable as a home-screen app on iOS/Android (PWA), works offline
-- Rotating daily motivational message
+```
+index.html          the app (PWA start_url)
+landing.html        getforja.app/  (waitlist + pitch)
+install.html        getforja.app/install
+privacy.html        privacy policy
+growth.html         private admin counts
+css/                app and landing styles
+js/                 the app (script.js is the boot file)
+i18n/               English→Spanish dictionaries
+shared/             streak math + rep counter (phone and server)
+icons/  brand/      PWA icons and logo
+supabase/functions  Edge Functions (one folder per job)
+supabase/sql/archive  SQL already applied on the live database
+supabase/migrations   new schema, after a `supabase db pull` baseline
+```
 
-## Tech stack
+`js/script.js` is still the large file for Today, Feed, Record, Me and
+auth. Later features already live next to it (`camera-verify.js`,
+`onboarding.js`, `challenges.js`, `celebrations.js`). Split more of
+`script.js` the same way; don't add a bundler.
 
-Plain HTML, CSS, and JavaScript — no frameworks, no build step. Guest
-progress is stored locally in the browser (`localStorage`); once you sign
-up, it's stored in Supabase (Postgres) with Row Level Security, so each
-user can only ever read or write their own data.
+Spanish dictionaries stay in three files on purpose: `/install` and the
+front page should not download the whole app's translations.
+
+## How it runs
+
+Plain HTML, CSS and JavaScript — no frameworks, no build step. Guest
+progress is stored in the browser (`localStorage`). Signed-in progress
+is stored in Supabase (Postgres + Auth) with Row Level Security.
+
+The phone never uploads video. It sends a joint-movement trace;
+`submit-set` recounts it with `shared/exercise-counter.js`. Streaks,
+plans and Feed posts are only written by Edge Functions, using
+`shared/game-rules.js`.
+
+Hosted on Netlify. `_redirects` sends `/` to the landing page, `/install`
+to the Home Screen guide, and hides `supabase/`.
 
 ## Running locally
 
-This is a static site, so any local web server works. For example, with
-Python installed:
+Any local web server works. For example:
 
 ```
-py -3 -m http.server 8000
+python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000/` in your browser. Note: the service
-worker (offline support) only activates when served over `http://localhost`
-or `https://` — opening `index.html` directly as a file will skip it.
+Then open `http://localhost:8000/` in your browser. The service worker
+(offline support) only activates on `http://localhost` or `https` —
+opening `index.html` as a file will skip it.
 
 ## License
 

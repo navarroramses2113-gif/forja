@@ -2,29 +2,29 @@
 // separate from the page itself. It can intercept network requests -
 // which is what lets an app keep working offline.
 
-// v6: earlier versions also saved Supabase's replies (workouts, friends,
-// profiles) here, where they outlived signing out. The new name makes the
-// "activate" step below delete that old cache with everything in it.
-const CACHE_NAME = "streakfit-v6";
+// v7: files moved into js/, css/, i18n/, shared/. The new name makes the
+// "activate" step below drop streakfit-v6 (and older caches that used to
+// keep Supabase replies, which outlived signing out).
+const CACHE_NAME = "forja-v7";
 
 // The files needed to run the app at all. These get saved into the
 // browser's cache during "install", so they're available even offline.
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
-  "./i18n.js",
-  "./i18n-guide-es.js",
-  "./i18n-es.js",
-  "./home-screen-guide.js",
-  "./style.css",
-  "./script.js",
-  "./supabase/functions/_shared/game-rules.js",
-  "./supabase/functions/_shared/exercise-counter.js",
-  "./setup-scenes.js",
-  "./camera-verify.js",
-  "./onboarding.js",
-  "./challenges.js",
-  "./celebrations.js",
+  "./i18n/i18n.js",
+  "./i18n/i18n-guide-es.js",
+  "./i18n/i18n-es.js",
+  "./js/home-screen-guide.js",
+  "./css/style.css",
+  "./js/script.js",
+  "./shared/game-rules.js",
+  "./shared/exercise-counter.js",
+  "./js/setup-scenes.js",
+  "./js/camera-verify.js",
+  "./js/onboarding.js",
+  "./js/challenges.js",
+  "./js/celebrations.js",
   "./manifest.json",
 ];
 

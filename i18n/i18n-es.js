@@ -3,7 +3,7 @@
 // "tú", in the same voice as the English: short, blunt, friendly.
 // {n}, {name}... are filled in by tr(); keep them in the Spanish too.
 // A key must match the English in the code exactly, spaces and dots included.
-// Added to, not replaced: smaller files (i18n-guide-es.js) may load first.
+// Added to, not replaced: smaller files (i18n/i18n-guide-es.js) may load first.
 window.FORJA_ES = Object.assign(window.FORJA_ES || {}, {
   // ---------- index.html ----------
   "Back": "Atrás",
