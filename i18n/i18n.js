@@ -1,6 +1,6 @@
 // Forja in English and Spanish. All the app's text is written in English in
 // the code and goes through tr() on its way to the screen. In Spanish, tr()
-// looks the English up in ES (i18n-es.js) and hands back the Spanish; in
+// looks the English up in ES (i18n/i18n-es.js) and hands back the Spanish; in
 // English it hands back the text exactly as written. Anything missing from
 // ES stays English - and on localhost the console says so - so a line that
 // was never translated can't break a screen.
