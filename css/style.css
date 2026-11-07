@@ -4455,32 +4455,8 @@ a.account-menu-item {
   margin-left: 0;
 }
 
-/* The pet comes alive: a quick blink every few seconds, and on
-   celebration screens the wow face bounces in and its sparkles twinkle. */
-.ob-pet-eyes {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ob-pet-blink 4.6s ease-in-out infinite;
-}
-
-@keyframes ob-pet-blink {
-  0%,
-  90%,
-  96%,
-  100% {
-    transform: none;
-  }
-
-  93% {
-    transform: scaleY(0.1);
-  }
-}
-
-.ob-mascot.is-wow {
-  transform-origin: 50% 70%;
-  animation: ob-pet-bounce 0.9s cubic-bezier(0.3, 1.5, 0.5, 1) both;
-}
-
+/* The face popping into Today's ring (.ring-face.snap). The pet itself
+   moves in pet.js. */
 @keyframes ob-pet-bounce {
   0% {
     opacity: 0;
@@ -4505,34 +4481,9 @@ a.account-menu-item {
   }
 }
 
-.ob-pet-sparkle {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ob-pet-twinkle 1.4s ease-in-out 0.5s infinite alternate both;
-}
-
-.ob-pet-sparkle + .ob-pet-sparkle {
-  animation-delay: 1.2s;
-}
-
-@keyframes ob-pet-twinkle {
-  from {
-    opacity: 0.35;
-    transform: scale(0.6) rotate(0deg);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1.1) rotate(20deg);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .ob-body.entering,
-  .ob-pop,
-  .ob-pet-eyes,
-  .ob-mascot.is-wow,
-  .ob-pet-sparkle {
+  .ob-pop {
     animation: none;
   }
 
@@ -6131,10 +6082,6 @@ a.account-menu-item {
   animation: pet-coach-bounce 0.8s ease-out both;
 }
 
-.pet-coach-pet.shake {
-  animation: pet-coach-shake 0.7s ease-in-out both;
-}
-
 .pet-coach-pet.idle {
   animation: pet-coach-breathe 3.2s ease-in-out infinite;
 }
@@ -6262,30 +6209,12 @@ a.account-menu-item {
   animation: celebrate-fade-in 0.25s ease both;
 }
 
-/* The pet flexing (FlexPet in celebrations.js moves it). */
+/* The pet flexing (pet.js flexSVG / playFlex moves it). */
 .flex-pet {
   width: 230px;
   height: auto;
   margin-bottom: -18px;
   overflow: visible;
-}
-
-.fp-shadow {
-  fill: var(--text-primary);
-  fill-opacity: 0.12;
-}
-
-/* With Reduce Motion it just stands in its final pose. */
-.flex-pet.still .fp-happy-r,
-.flex-pet.still .fp-brows,
-.flex-pet.still .fp-angry-eyes,
-.flex-pet.still .fp-brows-angry,
-.flex-pet.still .fp-mouth-angry,
-.flex-pet.still .fp-vein,
-.flex-pet.still .fp-mouth-o,
-.flex-pet.still .fp-mouth-grit,
-.flex-pet.still .fp-ting {
-  display: none;
 }
 
 .celebrate-number {
@@ -7431,4 +7360,128 @@ a.account-menu-item {
   #camera-screen:not(.is-review)::after {
     height: 30%;
   }
+}
+
+/* ---------- The pet (pet.js) ---------- */
+.forja-pet {
+  overflow: visible;
+}
+
+.forja-pet .pet-shadow {
+  fill: var(--text-primary);
+  fill-opacity: 0.14;
+}
+
+.forja-pet .pet-orb {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+/* A tap: squash, stretch into a small hop, settle. */
+.forja-pet .pet-orb.squish {
+  animation: pet-squish 0.6s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+@keyframes pet-squish {
+  0% { transform: scale(1, 1); }
+  18% { transform: scale(1.14, 0.86); }
+  48% { transform: scale(0.94, 1.08) translateY(-14%); }
+  76% { transform: scale(1.04, 0.96); }
+  100% { transform: scale(1, 1); }
+}
+
+.forja-pet .pet-spark {
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.7s ease-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forja-pet .pet-orb.squish {
+    animation: none;
+  }
+}
+
+/* Account > Your Pet: the pet up top, then its name and look. Swatches
+   and tiles are 44pt or bigger; the chosen one gets a green ring. */
+.pet-preview {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-sm) 0 var(--space-md);
+}
+
+.pet-preview .ob-mascot {
+  width: 104px;
+  height: 119px;
+}
+
+.pet-pick-label {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0;
+  border-top: 1px solid var(--border);
+  font-size: var(--font-body);
+  color: var(--text-primary);
+}
+
+.pet-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, 44px);
+  justify-content: space-between;
+  row-gap: 12px;
+  padding: 2px 0 var(--space-md);
+}
+
+.pet-swatch {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-solid);
+  font-family: inherit;
+  font-size: var(--font-footnote);
+  color: var(--text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pet-swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--bg-end), 0 0 0 4px var(--accent);
+}
+
+.pet-shapes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+  padding: 2px 0 var(--space-xs);
+}
+
+.pet-shape {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pet-shape svg {
+  width: 46px;
+  height: 46px;
+  pointer-events: none;
+}
+
+.pet-shape[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.pet-swatch:focus-visible,
+.pet-shape:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
 }

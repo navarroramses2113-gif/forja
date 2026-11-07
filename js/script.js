@@ -2183,7 +2183,7 @@ function hideSplash() {
 // "hide this one" line added into every other show-a-different-screen
 // function (which is exactly how the reset-password screen almost got
 // left out of revealApp() below).
-const SCREEN_IDS = ["onboarding-screen", "auth-screen", "forgot-password-screen", "reset-password-screen", "app-screen", "tracking-summary-screen", "share-route-screen", "calendar-screen", "recaps-screen", "follow-list-screen", "user-actions-screen", "account-screen", "my-plan-screen", "challenge-screen", "reminder-setup-screen", "camera-screen", "home-guide-screen"];
+const SCREEN_IDS = ["onboarding-screen", "auth-screen", "forgot-password-screen", "reset-password-screen", "app-screen", "tracking-summary-screen", "share-route-screen", "calendar-screen", "recaps-screen", "follow-list-screen", "user-actions-screen", "account-screen", "my-plan-screen", "challenge-screen", "reminder-setup-screen", "camera-screen", "home-guide-screen", "pet-screen"];
 
 function showScreen(idToShow) {
   SCREEN_IDS.forEach((id) => {
@@ -5967,19 +5967,10 @@ const SHARE_TEMPLATES = {
   light: { background: "#f4f4f1", text: "#141416", subtext: "#14141699", line: "#16a34a", day: "#22c55e", rest: "#22c55e59", restMark: "#15803d" },
 };
 
-// The celebration's flexing pet as a picture (brand/forja-pet-flex.svg,
-// made from celebrations.js FlexPet by forja-lab/tools/export-flexpet.js).
-let sharePetImage = null;
+// The celebration's flexing pet (shades + double-bicep) as a picture, in
+// this person's pet colors (pet.js).
 function sharePet() {
-  if (!sharePetImage) {
-    sharePetImage = new Promise((resolve) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = () => resolve(null);
-      image.src = "brand/forja-pet-flex.svg";
-    });
-  }
-  return sharePetImage;
+  return ForjaPet.flexImage();
 }
 
 // The Forja lockup (ring + word) from the page's logo sprite, as an image

@@ -82,7 +82,7 @@ const Onboarding = (function () {
   let lastRendered = null;
 
   function freshState() {
-    return { goals: [], source: null, level: null, placement: null, pace: null, walk: null, walkMinutes: 15, tested: {}, committed: false, reminderHour: null, customReminder: false, usernameOnly: false, accountDone: false, error: "", errorIsInfo: false, busy: false, showLogin: false };
+    return { goals: [], source: null, level: null, placement: null, pace: null, walk: null, walkMinutes: 15, petName: "", tested: {}, committed: false, reminderHour: null, customReminder: false, usernameOnly: false, accountDone: false, error: "", errorIsInfo: false, busy: false, showLogin: false };
   }
 
   const find = (list, v) => list.find((x) => x.v === v);
@@ -141,29 +141,13 @@ const Onboarding = (function () {
   const afterDay1 = () => (state.walk === "yes" ? "almost" : "streak");
 
   // ---------- pieces ----------
-  // The coach is the logo's ring with a face inside: "happy" next to
-  // questions, "wow" (bigger eyes, open mouth, sparkles) on celebrations.
-  // faceOnly draws just the face, for the middle of Today's ring.
+  // The pet (pet.js): calm next to questions ("happy"), jumping for joy on
+  // celebrations ("wow"), worried when nothing counted. faceOnly = the pet
+  // inside Today's closed ring.
   function mascot(mood, faceOnly) {
-    const wow = mood === "wow";
-    const worried = mood === "worried"; // Today's coach, when a streak is about to end
-    const arc = (color, offset) => `<circle cx="50" cy="60" r="36" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-dasharray="54 172.2" stroke-dashoffset="${offset}"/>`;
-    const eye = (x) => `<ellipse cx="${x}" cy="56" rx="${wow ? 5.8 : 5}" ry="${wow ? 7 : 6.2}" fill="#1c1c1e"/><circle cx="${x + 1.7}" cy="53.6" r="1.8" fill="#fff"/>`;
-    const mouth = wow
-      ? '<ellipse cx="50" cy="68" rx="4.6" ry="5.6" fill="#1c1c1e"/><ellipse cx="50" cy="71" rx="2.8" ry="1.9" fill="#ff7a8a"/>'
-      : worried
-        ? '<path d="M43.5 70 Q50 65.5 56.5 70" stroke="#1c1c1e" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M35.5 47.5 L45 44.5 M64.5 47.5 L55 44.5" stroke="#1c1c1e" stroke-width="2.8" stroke-linecap="round"/>'
-        : '<path d="M42.5 66 Q50 74 57.5 66" stroke="#1c1c1e" stroke-width="3.4" fill="none" stroke-linecap="round"/>';
-    const star = (x, y, r) => `<path class="ob-pet-sparkle" d="M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r} Z" fill="var(--ring-planks)"/>`;
-    // It blinks every few seconds; the wow face bounces in and its sparkles
-    // twinkle (style.css, off with Reduce Motion).
-    if (faceOnly) {
-      return `<svg class="pet-face${wow ? " is-wow" : ""}" viewBox="20 30 60 60" aria-hidden="true"><circle cx="50" cy="60" r="26.5" fill="#fff6ea"/><g class="ob-pet-eyes">${eye(41)}${eye(59)}</g>${mouth}</svg>`;
-    }
-    return `<svg class="ob-mascot${wow ? " is-wow" : ""}" viewBox="0 0 100 112" aria-hidden="true">
-      <g transform="rotate(-73 50 60)">${arc("var(--ring-pushups)", 0)}${arc("var(--ring-planks)", -75.4)}${arc("var(--ring-squats)", -150.8)}</g>
-      <circle cx="50" cy="60" r="26.5" fill="#fff6ea"/><g class="ob-pet-eyes">${eye(41)}${eye(59)}</g>${mouth}${wow ? star(90, 14, 7) + star(80, 5, 3.6) : ""}
-    </svg>`;
+    if (faceOnly) return ForjaPet.html("happy", "ring");
+    if (mood === "wow") return ForjaPet.html("happy", "", true);
+    return ForjaPet.html(mood === "worried" ? "worried" : "idle");
   }
   const coach = (text) => `<div class="ob-coach">${mascot("happy")}<p class="ob-bubble">${text}</p></div>`;
   const bars = (n) => `<span class="ob-bars">${[1, 2, 3, 4].map((i) => `<i class="${i <= n ? "on" : ""}" style="height:${4 + i * 4}px"></i>`).join("")}</span>`;
@@ -339,6 +323,13 @@ const Onboarding = (function () {
       },
       footer: () => cta(tr("Looks Good"), "next"),
     },
+    // Optional: Skip leaves it without a name (Account > Your Pet later).
+    petname: {
+      centered: true,
+      body: () => `${mascot("happy")}<h1 class="ob-title">${tr("Name your pet")}</h1><p class="ob-lead">${tr("It cheers you on every day.")}</p>
+        <div class="auth-fields"><input id="ob-pet-name" enterkeyhint="done" placeholder="${tr("Pet name")}" maxlength="${ForjaPet.NAME_MAX}" autocomplete="off" aria-label="${tr("Pet name")}" value="${esc(state.petName)}"></div>`,
+      footer: () => cta(tr("Continue"), "pet-name", !state.petName.trim()) + quiet(tr("Skip"), "next"),
+    },
     almost: {
       centered: true,
       noBack: true,
@@ -430,7 +421,7 @@ const Onboarding = (function () {
     return [
       "goal", "source", "level", "placement",
       ...(test ? ["test", "result"] : []),
-      "pace", "walk", "plan",
+      "pace", "walk", "plan", "petname",
       ...(test && exercisesMet() ? [afterDay1()] : []),
       "account",
       ...(offerHomeScreen() ? ["homescreen"] : []),
@@ -450,7 +441,8 @@ const Onboarding = (function () {
       case "result": return "pace";
       case "pace": return "walk";
       case "walk": return "plan";
-      case "plan": return exercisesMet() ? afterDay1() : "account";
+      case "plan": return "petname";
+      case "petname": return exercisesMet() ? afterDay1() : "account";
       case "almost":
       case "streak": return "account";
       case "account": return offerHomeScreen() ? "homescreen" : pushSupported() ? "reminder" : "friends";
@@ -708,6 +700,9 @@ const Onboarding = (function () {
         if (!state.customReminder && (state.reminderHour === null || REMINDER_HOURS.includes(state.reminderHour))) state.reminderHour = 21;
         state.customReminder = true;
         return render();
+      case "pet-name":
+        ForjaPet.save({ name: state.petName.trim().slice(0, ForjaPet.NAME_MAX) });
+        return go(nextScreen());
       case "login": return goToLogin();
       case "camera": return openCamera();
       case "skip-test":
@@ -732,6 +727,10 @@ const Onboarding = (function () {
   screenEl.addEventListener("input", (event) => {
     const button = $("ob-footer").querySelector('[data-action="create"], [data-action="save-username"]');
     if (button && !state.busy) button.disabled = !accountReady();
+    if (event.target.id === "ob-pet-name") {
+      state.petName = event.target.value;
+      $("ob-footer").querySelector('[data-action="pet-name"]').disabled = !state.petName.trim();
+    }
     if (event.target.id === "ob-username") usernameLeft = false;
     updateUsernameHint();
     updatePasswordHint();

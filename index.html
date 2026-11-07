@@ -34,7 +34,7 @@
       }
     } catch (e) {}
   </script>
-  <link rel="stylesheet" href="css/style.css?v=40">
+  <link rel="stylesheet" href="css/style.css?v=41">
 
   <!-- Leaflet (the live walk map) loads once the app is on screen: see
        loadLeaflet() in script.js. Opening the app doesn't wait for it. -->
@@ -295,6 +295,10 @@
         <span>Daily Minimums</span>
         <span class="account-menu-chevron">›</span>
       </button>
+      <button id="open-pet-button" class="account-menu-item">
+        <span>Your Pet</span>
+        <span class="account-menu-chevron">›</span>
+      </button>
       <!-- Only in a phone browser (not the Home Screen app): home-screen-guide.js. -->
       <button id="open-home-guide-button" class="account-menu-item hidden">
         <span>Add to Home Screen</span>
@@ -432,6 +436,28 @@
       <button id="confirm-delete-account-button" class="auth-submit-button block-confirm-button" disabled>Delete My Account</button>
     </div>
 
+  </main>
+
+  <!-- Your Pet: its name and look (pet.js). Every choice saves the moment
+       it's made, like the iPhone's own Settings. -->
+  <main id="pet-screen" class="card hidden">
+    <button id="pet-screen-back-button" class="nav-back" aria-label="Back to Account">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Account
+    </button>
+    <h1 class="large-title">Your Pet</h1>
+    <div class="settings-panel pet-panel">
+      <div id="pet-preview" class="pet-preview"></div>
+      <div class="settings-row">
+        <label for="pet-name">Name</label>
+        <input type="text" id="pet-name" placeholder="Add a name" maxlength="16" autocomplete="off" enterkeyhint="done">
+      </div>
+      <p class="pet-pick-label">Color</p>
+      <div id="pet-bodies" class="pet-swatches" role="group" aria-label="Color"></div>
+      <p class="pet-pick-label">Eyes</p>
+      <div id="pet-eye-colors" class="pet-swatches" role="group" aria-label="Eyes"></div>
+      <p class="pet-pick-label">Eye shape</p>
+      <div id="pet-shapes" class="pet-shapes" role="group" aria-label="Eye shape"></div>
+    </div>
   </main>
 
   <!-- My Plan: a signed-in player's progressive overload plan. Deliberately
@@ -994,15 +1020,16 @@
        First, so every script after them can use tr(). -->
   <script src="i18n/i18n.js?v=2"></script>
   <script src="i18n/i18n-guide-es.js?v=1"></script>
-  <script src="i18n/i18n-es.js?v=7"></script>
+  <script src="i18n/i18n-es.js?v=9"></script>
   <script src="shared/game-rules.js?v=10"></script>
   <script src="shared/exercise-counter.js?v=15"></script>
   <script src="js/setup-scenes.js?v=1"></script>
-  <script src="js/camera-verify.js?v=17"></script>
+  <script src="js/camera-verify.js?v=18"></script>
+  <script src="js/pet.js?v=2"></script>
   <script src="js/home-screen-guide.js?v=1"></script>
-  <script src="js/onboarding.js?v=15"></script>
+  <script src="js/onboarding.js?v=16"></script>
   <script src="js/script.js?v=43"></script>
   <script src="js/challenges.js?v=8"></script>
-  <script src="js/celebrations.js?v=11"></script>
+  <script src="js/celebrations.js?v=14"></script>
 </body>
 </html>

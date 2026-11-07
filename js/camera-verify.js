@@ -963,7 +963,10 @@ const ForjaCamera = (function () {
     if (badges.length) confetti(badges.some((b) => b.kind === "day") ? 46 : badges.some((b) => b.kind === "best") ? 32 : 18);
 
     if (reward && reward.line && typeof Onboarding !== "undefined") {
-      $("reward-pet").innerHTML = Onboarding.mascot(reward.face || "happy");
+      // Happy after a set (a jump for a badge), worried when nothing counted.
+      // A counted set also wakes a sleeping pet (pet.js).
+      if (result > 0) ForjaPet.setSaved();
+      $("reward-pet").innerHTML = ForjaPet.html(reward.face === "worried" ? "worried" : "happy", "", badges.length > 0);
       $("reward-line").innerHTML = reward.line;
       coach.classList.remove("is-quiet");
       if (!reducedMotion()) {

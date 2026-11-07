@@ -6,379 +6,14 @@
 // - a finished day: the pet jumps into the ring, which closes into one full
 //   circle with its face inside (and it stays that way for the rest of the day);
 // - every 7th day of a streak gets one full-screen celebration, where the
-//   pet comes alive and flexes;
+//   pet puts on its shades and flexes (pet.js);
 // - on days the plan steps up, the pet's line under the ring says so.
 // Each moment waits until Today is actually on screen (e.g. after the
 // camera closes). With Reduce Motion nothing moves; the end states still show.
 
-// ---------- the flexing pet ----------
-// The pet, flexing: a cartoon in one SVG with joints (shoulders, elbows, a
-// bicep that swells) and a few faces it switches between. FlexPet.svg()
-// draws it; FlexPet.play(svg) runs it once (about 3.3 s), then it keeps
-// breathing, blinking and flexing now and then until it's removed.
-//
-// The story: it pops up surprised, lands with a squish, scrunches up its
-// face and crouches, jumps - arms burst out and curl into a flex - lands
-// with an angry flex face, pumps twice with a "ting", winks, and relaxes
-// into a proud smile. Every later flex brings the angry face back.
-const FlexPet = (function () {
-  const INK = "#1c1c1e";
-  const FACE = "#fff6ea";
-  const TONGUE = "#ff7a8a";
-  // Where things sit in the drawing (ring center 50,60; radius 36), for the
-  // right arm; the left one is mirrored.
-  const SHOULDER = [86, 68];
-  const ELBOW = [118, 68];
-  const BICEP = [102, 63];
-
-  const star = (x, y, r, cls) => `<path class="${cls}" style="transform-origin:${x}px ${y}px" d="M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r} Z" fill="var(--ring-planks)"/>`;
-
-  // One arm in the flex pose (upper arm out, forearm up), drawn like the
-  // rest of the pet: flat ring color, one darker shade for the underside,
-  // one white shine on the bicep. side -1 mirrors every x around the
-  // pet's middle (path points are written "x,y" so they can be mirrored).
-  function arm(side, color) {
-    const x = (v) => (side > 0 ? v : 100 - v);
-    const P = (d) => d.replace(/(-?[\d.]+),(-?[\d.]+)/g, (_, a, b) => `${+x(+a).toFixed(2)} ${b}`);
-    const o = (p) => `transform-origin:${x(p[0])}px ${p[1]}px`;
-    const shade = `fill="#000" fill-opacity="0.16"`;
-    const crease = `fill="none" stroke="${INK}" stroke-opacity="0.3" stroke-width="1.8" stroke-linecap="round"`;
-    return `<g class="fp-arm" data-side="${side}" style="${o(SHOULDER)}">
-      <path d="${P("M82,59 L114,60 C122,60 126,64 126,70 C126,76 121,78 114,77.5 C104,80.5 92,80.5 82,77.5 Z")}" fill="${color}"/>
-      <path d="${P("M86,75.5 C96,79 108,79 116,75.5 C121,74 124.5,72.5 126,70 C126,76 121,78 114,77.5 C104,80.5 92,80.5 84,77.8 Z")}" ${shade}/>
-      <g class="fp-bicep" style="${o(BICEP)}">
-        <path d="${P("M88,63.5 C87.5,50 97,43.5 105,45.5 C113,47.5 115.5,56 113.5,63.5 Z")}" fill="${color}"/>
-        <path d="${P("M93.5,53 C96.5,48.5 102,47.5 106,49.5")}" fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="2.6" stroke-linecap="round"/>
-      </g>
-      <g class="fp-forearm" style="${o(ELBOW)}">
-        <path d="${P("M109,68 C107,60 108,52 111,44 L125,44 C128,52 129.5,60 127,68 Z")}" fill="${color}"/>
-        <path d="${P("M109,68 C107,60 108,52 111,44 L114,44 C112,52 112,60 113,68 Z")}" ${shade}/>
-        <rect x="${Math.min(x(107), x(129))}" y="23" width="22" height="23" rx="8" fill="${color}"/>
-        <path d="${P("M107.5,29.5 L113,29.5 M107.5,34.5 L113,34.5 M107.5,39.5 L113,39.5 M110,24.5 C114,22.5 120,23 123,27")}" ${crease}/>
-      </g>
-    </g>`;
-  }
-
-  function svg() {
-    const ringArc = (color, offset) => `<circle cx="50" cy="60" r="36" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-dasharray="54 172.2" stroke-dashoffset="${offset}"/>`;
-    const openEye = (cx, cls) => `<g class="${cls}" style="transform-origin:${cx}px 56px"><ellipse cx="${cx}" cy="56" rx="5.8" ry="7" fill="${INK}"/><circle cx="${cx + 1.7}" cy="53.6" r="1.8" fill="#fff"/></g>`;
-    const happyEye = (cx, cls) => `<path class="${cls}" d="M${cx - 6} 58 Q${cx} 49 ${cx + 6} 58" fill="none" stroke="${INK}" stroke-width="3.6" stroke-linecap="round"/>`;
-    // Angry: the top of each eye cut off by a lid that slopes down to the nose.
-    const m = (v) => 100 - v;
-    const angryEyes = `<g class="fp-angry-eyes" fill="${INK}">
-      <path d="M34.5 51.5 L47.5 56 C47.5 61.5 45 64 41 64 C36.8 64 34.5 60.5 34.5 51.5 Z"/><circle cx="43.2" cy="59" r="1.5" fill="#fff"/>
-      <path d="M${m(34.5)} 51.5 L${m(47.5)} 56 C${m(47.5)} 61.5 ${m(45)} 64 ${m(41)} 64 C${m(36.8)} 64 ${m(34.5)} 60.5 ${m(34.5)} 51.5 Z"/><circle cx="${m(38.8)}" cy="59" r="1.5" fill="#fff"/>
-    </g>`;
-    // The "anger mark" on top of the head: four curved strokes, pulsing.
-    const vein = `<g class="fp-vein" style="transform-origin:50px 19px" fill="none" stroke="var(--ring-pushups)" stroke-width="2.8" stroke-linecap="round">
-      <path d="M47.5 13 Q47.5 16.5 44 16.5"/><path d="M52.5 13 Q52.5 16.5 56 16.5"/><path d="M47.5 25 Q47.5 21.5 44 21.5"/><path d="M52.5 25 Q52.5 21.5 56 21.5"/>
-    </g>`;
-    return `<svg class="flex-pet" viewBox="-36 -26 172 162" aria-hidden="true">
-      <ellipse class="fp-shadow" cx="50" cy="112" rx="30" ry="4.5" style="transform-origin:50px 112px"/>
-      <g class="fp-jump">
-        <g class="fp-squash" style="transform-origin:50px 104px">
-          <g class="fp-lean" style="transform-origin:50px 104px">
-            ${arm(-1, "var(--ring-squats)")}${arm(1, "var(--ring-pushups)")}
-            <g transform="rotate(-73 50 60)">${ringArc("var(--ring-pushups)", 0)}${ringArc("var(--ring-planks)", -75.4)}${ringArc("var(--ring-squats)", -150.8)}</g>
-            <circle cx="50" cy="60" r="26.5" fill="${FACE}"/>
-            <g class="fp-eyes">
-              ${openEye(41, "fp-eye-l")}${openEye(59, "fp-eye-r")}
-              ${happyEye(59, "fp-happy-r")}
-              ${angryEyes}
-            </g>
-            <g class="fp-brows" stroke="${INK}" stroke-width="3.4" stroke-linecap="round">
-              <line x1="34" y1="45" x2="45" y2="49"/><line x1="66" y1="45" x2="55" y2="49"/>
-            </g>
-            <g class="fp-brows-angry" stroke="${INK}" stroke-width="4.4" stroke-linecap="round">
-              <line x1="32" y1="45" x2="47" y2="51.5"/><line x1="68" y1="45" x2="53" y2="51.5"/>
-            </g>
-            <g class="fp-mouth-o"><ellipse cx="50" cy="68" rx="4.6" ry="5.6" fill="${INK}"/><ellipse cx="50" cy="71" rx="2.8" ry="1.9" fill="${TONGUE}"/></g>
-            <g class="fp-mouth-grit"><rect x="41" y="64.5" width="18" height="7" rx="3.5" fill="#fff" stroke="${INK}" stroke-width="2.4"/><line x1="42.5" y1="68" x2="57.5" y2="68" stroke="${INK}" stroke-width="1.4"/></g>
-            <g class="fp-mouth-angry" stroke="${INK}" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M38.5 65 C44 63 56 63 61.5 65 L59.5 72.5 C54 74.5 46 74.5 40.5 72.5 Z" fill="#fff" stroke-width="2.4"/>
-              <path d="M40 68.8 L60 68.8 M45 64.2 L45 73.6 M50 63.8 L50 74 M55 64.2 L55 73.6" fill="none" stroke-width="1.3"/>
-            </g>
-            <g class="fp-mouth-smile"><path d="M39.5 64.5 Q50 80 60.5 64.5 Z" fill="${INK}" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><ellipse cx="50" cy="72.2" rx="4.4" ry="2.4" fill="${TONGUE}"/></g>
-            ${vein}
-          </g>
-        </g>
-        ${star(135, 18, 8, "fp-ting fp-ting-r")}${star(-35, 18, 8, "fp-ting fp-ting-l")}
-      </g>
-    </svg>`;
-  }
-
-  // ---------- the motion ----------
-  const T = 3.3; // seconds the intro takes
-  const LOOP = 4.2; // seconds per idle loop after it
-
-  // frames: [[seconds, {css}, easing?], ...] from 0 to the total.
-  function animate(el, frames, total, delay, iterations) {
-    return el.animate(
-      frames.map(([t, props, easing]) => ({ offset: t / total, easing: easing || "ease-in-out", ...props })),
-      { duration: total * 1000, delay: (delay || 0) * 1000, iterations: iterations || 1, fill: iterations ? "none" : "both" }
-    );
-  }
-  // Visible only during the given [from, to] spans (snaps, no fade).
-  function show(el, spans) {
-    const frames = [[0, { opacity: spans.some(([a]) => a === 0) ? 1 : 0 }, "steps(1, end)"]];
-    for (const [a, b] of spans) {
-      if (a > 0) frames.push([a, { opacity: 1 }, "steps(1, end)"]);
-      if (b < T) frames.push([b, { opacity: 0 }, "steps(1, end)"]);
-    }
-    frames.push([T, { opacity: spans.some(([, b]) => b >= T) ? 1 : 0 }]);
-    frames.sort((p, q) => p[0] - q[0]);
-    animate(el, frames, T);
-  }
-  const tf = (s) => ({ transform: s });
-
-  function play(root) {
-    const q = (sel) => root.querySelector(sel);
-    const all = (sel) => root.querySelectorAll(sel);
-    const UP = "cubic-bezier(0.2, 0.7, 0.4, 1)"; // fast off the ground, slowing at the top
-    const DOWN = "cubic-bezier(0.6, 0, 0.8, 0.4)"; // speeding up as it falls
-
-    // Up and down. Pops up, lands, crouches, jumps into the flex, lands, then
-    // bobs with each pump.
-    animate(q(".fp-jump"), [
-      [0, tf("translateY(26px)"), UP],
-      [0.26, tf("translateY(-16px)"), DOWN],
-      [0.42, tf("translateY(0)")],
-      [0.8, tf("translateY(0)")],
-      [0.95, tf("translateY(3px)"), UP],
-      [1.2, tf("translateY(-30px)"), DOWN],
-      [1.42, tf("translateY(0)")],
-      [1.9, tf("translateY(0)")],
-      [2.0, tf("translateY(-6px)")],
-      [2.15, tf("translateY(0)")],
-      [2.4, tf("translateY(0)")],
-      [2.5, tf("translateY(-6px)")],
-      [2.65, tf("translateY(0)")],
-      [T, tf("translateY(0)")],
-    ], T);
-
-    // Squash and stretch: tall while flying, flat when it lands or crouches.
-    animate(q(".fp-squash"), [
-      [0, tf("scale(0.2, 0.3)")],
-      [0.2, tf("scale(0.9, 1.14)")],
-      [0.42, tf("scale(1.18, 0.82)")],
-      [0.56, tf("scale(0.95, 1.05)")],
-      [0.68, tf("scale(1)")],
-      [0.8, tf("scale(1)")],
-      [0.95, tf("scale(1.14, 0.84)")],
-      [1.1, tf("scale(0.9, 1.12)")],
-      [1.25, tf("scale(1)")],
-      [1.42, tf("scale(1.16, 0.84)")],
-      [1.56, tf("scale(0.96, 1.04)")],
-      [1.7, tf("scale(1)")],
-      [1.9, tf("scale(1.05, 0.95)")],
-      [2.02, tf("scale(0.98, 1.03)")],
-      [2.15, tf("scale(1)")],
-      [2.4, tf("scale(1.05, 0.95)")],
-      [2.52, tf("scale(0.98, 1.03)")],
-      [2.65, tf("scale(1)")],
-      [T, tf("scale(1)")],
-    ], T);
-    animate(q(".fp-squash"), [
-      [0, tf("scale(1)")],
-      [LOOP * 0.25, tf("scale(1.025, 0.975)")],
-      [LOOP * 0.5, tf("scale(1)")],
-      [LOOP * 0.68, tf("scale(1.05, 0.95)")],
-      [LOOP * 0.76, tf("scale(0.98, 1.03)")],
-      [LOOP * 0.85, tf("scale(1)")],
-      [LOOP, tf("scale(1)")],
-    ], LOOP, T, Infinity);
-
-    // A little sway: first pump leans one way, the second the other.
-    animate(q(".fp-lean"), [
-      [0, tf("rotate(0)")],
-      [1.8, tf("rotate(0)")],
-      [2.0, tf("rotate(-7deg)")],
-      [2.3, tf("rotate(0)")],
-      [2.5, tf("rotate(7deg)")],
-      [2.8, tf("rotate(0)")],
-      [T, tf("rotate(0)")],
-    ], T);
-
-    // The shadow shrinks while it's in the air.
-    animate(q(".fp-shadow"), [
-      [0, { transform: "scale(0.2)", opacity: 0 }],
-      [0.26, { transform: "scale(0.6)", opacity: 0.5 }],
-      [0.42, { transform: "scale(1.15)", opacity: 1 }],
-      [0.68, { transform: "scale(1)", opacity: 1 }],
-      [0.95, { transform: "scale(1.1)", opacity: 1 }],
-      [1.2, { transform: "scale(0.55)", opacity: 0.45 }],
-      [1.42, { transform: "scale(1.15)", opacity: 1 }],
-      [1.7, { transform: "scale(1)", opacity: 1 }],
-      [T, { transform: "scale(1)", opacity: 1 }],
-    ], T);
-
-    // Arms: hidden until the jump, then burst out (overshooting upward),
-    // drag a little on the landing, and lift with each pump.
-    for (const el of all(".fp-arm")) {
-      const s = Number(el.dataset.side);
-      const r = (deg) => `rotate(${deg * s}deg)`;
-      animate(el, [
-        [0, tf(`${r(50)} scale(0)`)],
-        [1.0, tf(`${r(50)} scale(0)`), "cubic-bezier(0.2, 0.9, 0.3, 1.2)"],
-        [1.2, tf(`${r(-28)} scale(1.1)`)],
-        [1.36, tf(`${r(-6)} scale(1)`)],
-        [1.5, tf(`${r(12)} scale(1)`)],
-        [1.68, tf(`${r(0)} scale(1)`)],
-        [1.88, tf(`${r(0)} scale(1)`)],
-        [2.0, tf(`${r(-9)} scale(1.04)`)],
-        [2.18, tf(`${r(0)} scale(1)`)],
-        [2.38, tf(`${r(0)} scale(1)`)],
-        [2.5, tf(`${r(-9)} scale(1.04)`)],
-        [2.68, tf(`${r(0)} scale(1)`)],
-        [T, tf(`${r(0)} scale(1)`)],
-      ], T);
-      animate(el, [
-        [0, tf(`${r(0)}`)],
-        [LOOP * 0.66, tf(`${r(0)}`)],
-        [LOOP * 0.72, tf(`${r(-8)}`)],
-        [LOOP * 0.84, tf(`${r(0)}`)],
-        [LOOP, tf(`${r(0)}`)],
-      ], LOOP, T, Infinity);
-    }
-
-    // Forearms: straight out as the arms appear, then curl up past the
-    // flex and settle; each pump curls them in a bit tighter.
-    for (const el of all(".fp-forearm")) {
-      const s = Number(el.closest(".fp-arm").dataset.side);
-      const r = (deg) => tf(`rotate(${deg * s}deg)`);
-      animate(el, [
-        [0, r(90)],
-        [1.12, r(80), "cubic-bezier(0.3, 0, 0.3, 1.3)"],
-        [1.36, r(-22)],
-        [1.52, r(6)],
-        [1.68, r(0)],
-        [1.88, r(0)],
-        [2.0, r(-20)],
-        [2.18, r(0)],
-        [2.38, r(0)],
-        [2.5, r(-20)],
-        [2.68, r(0)],
-        [T, r(0)],
-      ], T);
-      animate(el, [
-        [0, r(0)],
-        [LOOP * 0.66, r(0)],
-        [LOOP * 0.72, r(-18)],
-        [LOOP * 0.84, r(0)],
-        [LOOP, r(0)],
-      ], LOOP, T, Infinity);
-    }
-
-    // The bicep swells with every curl.
-    for (const el of all(".fp-bicep")) {
-      animate(el, [
-        [0, tf("scale(0.4)")],
-        [1.2, tf("scale(0.4)")],
-        [1.36, tf("scale(1.25)")],
-        [1.52, tf("scale(0.95)")],
-        [1.68, tf("scale(1)")],
-        [1.88, tf("scale(1)")],
-        [2.0, tf("scale(1.32)")],
-        [2.18, tf("scale(1)")],
-        [2.38, tf("scale(1)")],
-        [2.5, tf("scale(1.32)")],
-        [2.68, tf("scale(1)")],
-        [T, tf("scale(1)")],
-      ], T);
-      animate(el, [
-        [0, tf("scale(1)")],
-        [LOOP * 0.66, tf("scale(1)")],
-        [LOOP * 0.72, tf("scale(1.3)")],
-        [LOOP * 0.84, tf("scale(1)")],
-        [LOOP, tf("scale(1)")],
-      ], LOOP, T, Infinity);
-    }
-
-    // "Ting!" next to each fist at the top of each pump.
-    for (const el of all(".fp-ting")) {
-      const pop = (t) => [
-        [t - 0.04, { transform: "scale(0) rotate(0)", opacity: 1 }],
-        [t + 0.08, { transform: "scale(1.2) rotate(45deg)", opacity: 1 }],
-        [t + 0.3, { transform: "scale(0) rotate(90deg)", opacity: 0 }],
-      ];
-      animate(el, [[0, { transform: "scale(0)", opacity: 0 }], ...pop(1.38), ...pop(2.02), ...pop(2.52), [T, { transform: "scale(0)", opacity: 0 }]], T);
-      animate(el, [[0, { transform: "scale(0)", opacity: 0 }], ...pop(LOOP * 0.73), [LOOP, { transform: "scale(0)", opacity: 0 }]], LOOP, T, Infinity);
-    }
-
-    // Faces: surprised -> gritting its teeth (crouch and jump) -> angry
-    // (the flex and its pumps) -> a wink -> proud smile.
-    const WOW = [0, 0.86];
-    const GRIT = [0.86, 1.4];
-    const ANGRY = [1.4, 2.78];
-    const WINK = [2.78, 3.15];
-    const SMILE = [3.15, T];
-    show(q(".fp-eye-l"), [WOW, GRIT, WINK, SMILE]);
-    show(q(".fp-eye-r"), [WOW, GRIT, SMILE]);
-    show(q(".fp-happy-r"), [WINK]);
-    show(q(".fp-brows"), [GRIT]);
-    show(q(".fp-mouth-o"), [WOW]);
-    show(q(".fp-mouth-grit"), [GRIT]);
-    show(q(".fp-mouth-smile"), [WINK, SMILE]);
-    const angry = [".fp-angry-eyes", ".fp-brows-angry", ".fp-mouth-angry", ".fp-vein"];
-    for (const sel of angry) show(q(sel), [ANGRY]);
-    // In the idle loop it gets angry again for each flex.
-    const FLEX = [LOOP * 0.62, LOOP * 0.9];
-    for (const sel of [".fp-eye-l", ".fp-eye-r", ".fp-mouth-smile", ...angry]) {
-      const during = angry.includes(sel) ? 1 : 0;
-      animate(q(sel), [
-        [0, { opacity: 1 - during }, "steps(1, end)"],
-        [FLEX[0], { opacity: during }, "steps(1, end)"],
-        [FLEX[1], { opacity: 1 - during }],
-        [LOOP, { opacity: 1 - during }],
-      ], LOOP, T, Infinity);
-    }
-    // The anger mark pops in with the flex and throbs with every pump.
-    const throb = (t) => [[t - 0.1, tf("scale(1)")], [t, tf("scale(1.35)")], [t + 0.16, tf("scale(1)")]];
-    animate(q(".fp-vein"), [
-      [0, tf("scale(0)")],
-      [1.4, tf("scale(0)")],
-      [1.52, tf("scale(1.3)")],
-      [1.64, tf("scale(1)")],
-      ...throb(2.0),
-      ...throb(2.5),
-      [T, tf("scale(1)")],
-    ], T);
-    animate(q(".fp-vein"), [
-      [0, tf("scale(0)")],
-      [FLEX[0], tf("scale(0)")],
-      [LOOP * 0.66, tf("scale(1.3)")],
-      ...throb(LOOP * 0.74),
-      [LOOP, tf("scale(1)")],
-    ], LOOP, T, Infinity);
-    // Squinting while it strains; blinking now and then afterwards.
-    for (const eye of all(".fp-eye-l, .fp-eye-r")) {
-      animate(eye, [
-        [0, tf("scaleY(1)")],
-        [0.38, tf("scaleY(1)")],
-        [0.44, tf("scaleY(0.75)")],
-        [0.56, tf("scaleY(1)")],
-        [0.86, tf("scaleY(1)"), "steps(1, end)"],
-        [0.9, tf("scaleY(0.5)")],
-        [1.4, tf("scaleY(0.5)"), "steps(1, end)"],
-        [1.42, tf("scaleY(1)")],
-        [T, tf("scaleY(1)")],
-      ], T);
-      animate(eye, [
-        [0, tf("scaleY(1)")],
-        [LOOP * 0.3, tf("scaleY(1)")],
-        [LOOP * 0.33, tf("scaleY(0.1)")],
-        [LOOP * 0.36, tf("scaleY(1)")],
-        [LOOP, tf("scaleY(1)")],
-      ], LOOP, T, Infinity);
-    }
-  }
-
-  return { svg, play, duration: T };
-})();
-
 // Loaded after script.js and onboarding.js, and uses their helpers (data,
 // todayString, serverPlan, formatDuration, streakCountEl, statusMessageEl,
-// ForjaRules, Onboarding.mascot).
+// ForjaRules, Onboarding.mascot) and pet.js (ForjaPet).
 const Celebrations = (function () {
   const $ = (id) => document.getElementById(id);
   const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -608,8 +243,7 @@ const Celebrations = (function () {
   // plan's next level-up. Once the day is done the pet lives in the closed
   // ring and talks from under it. It hops in when Today opens, moves to fit
   // the moment, and tapping it gets another line.
-  const MOVES = { fresh: "wave", newbie: "wave", nudged: "wave", partway: "nod", close: "bounce", risk: "shake" };
-  const FACES = { close: "wow", risk: "worried" };
+  const MOVES = { fresh: "wave", newbie: "wave", nudged: "wave", partway: "nod", close: "bounce", risk: "nod" }; // evenings: a gentle nod, never a scolding shake
   // One health tip a day, the same for everyone. Before the workout it's a
   // tap away; once the day is done it's the first thing the pet says.
   const TIPS = [
@@ -671,11 +305,6 @@ const Celebrations = (function () {
   function liveStreak() {
     return ForjaRules.shownStreak(statsNow(), todayString());
   }
-  // True when skipping today would end it (no rest day left to cover it).
-  function streakEndsTonight() {
-    return liveStreak() > 0 && ForjaRules.nextStats(statsNow(), ForjaRules.addDays(todayString(), 1)).streak === 1;
-  }
-
   // What's left today, in the order of the ring. A plank is one hold, so a
   // short one still needs the full time.
   function leftToDo(progress) {
@@ -820,10 +449,15 @@ const Celebrations = (function () {
     const total = data.minimums.walkRun !== null ? 4 : 3;
     const started = progress.pushups + progress.planks + progress.squats + progress.walkRun > 0;
     if (!started) {
-      if (streakEndsTonight() && new Date().getHours() >= 20) {
+      // Evenings follow the pet's face (pet.js): Worried from 8 PM, Sad
+      // from 10 PM. Warm words only, never guilt (user, 2026-11-07).
+      const hour = new Date().getHours();
+      if (hour >= 20) {
+        const pushups = plural(data.minimums.pushups, "push-up", "push-ups");
+        const todo = tr("{todo}. Then the day logs itself.", { todo: capital(joinList(left)) });
         return {
           moment: "risk",
-          lines: [tr('<span class="warn">Your {n}-day streak ends at midnight.</span> There\'s still time.', { n: streak }), tr("It's getting late. Me and your <b>{n}-day streak</b> are nervous.", { n: streak })],
+          lines: [hour >= 22 ? tr("A few minutes still counts. {pushups}?", { pushups: capital(pushups) }) : tr("Still plenty of time today. {pushups}?", { pushups: capital(pushups) }), todo],
         };
       }
       if (streak === 0) return { moment: "newbie", lines: [tr("Fresh start. <b>{todo}</b>. Let's go.", { todo: capital(joinList(left)) }), tr("Day <b>1</b> is the hardest one. Get it over with.")] };
@@ -865,13 +499,11 @@ const Celebrations = (function () {
     }, 1000);
   }
 
-  function drawPet(moment) {
+  // The pet's mood here follows the clock, not the moment (pet.js: worried
+  // from 8 PM, sad from 10 PM, asleep 11 PM to 7 AM), so it's drawn once.
+  function drawPet() {
     const pet = $("pet-coach-pet");
-    const face = FACES[moment] || "happy";
-    if (pet.dataset.face !== face) {
-      pet.dataset.face = face;
-      pet.innerHTML = Onboarding.mascot(face);
-    }
+    if (!pet.querySelector(".forja-pet")) pet.innerHTML = ForjaPet.html("auto", "coach");
   }
 
   // Top spot (the day isn't done) or in the ring (it is). animate = the
@@ -907,7 +539,7 @@ const Celebrations = (function () {
     coachMoment = says.moment;
     coachLines = says.lines;
     coachIndex = 0;
-    if (!done) drawPet(says.moment);
+    if (!done) drawPet();
     const bubble = done ? $("pet-coach-below") : $("pet-coach-bubble");
     if (first || animate) {
       // Right away: the first draw (the intro below brings it in) or the
@@ -963,51 +595,17 @@ const Celebrations = (function () {
       faceHop();
     } else {
       speak($("pet-coach-bubble"), coachLines[coachIndex]);
-      move(coachMoment === "risk" ? "shake" : "bounce");
+      move(coachMoment === "risk" ? "nod" : "bounce");
     }
   }
 
-  // On the way down, the flying pet's ring (the logo: radius 36, 12 thick,
-  // arcs of 54 turned -73 degrees) turns into a small copy of Today's ring
-  // (radius 50, 14 thick, slices from 12 o'clock with a gap after each), so
-  // it lands exactly on it. Follows the flight's own clock.
-  function morphFlyerRing(flyer, flight, duration) {
-    const group = flyer.querySelector("g");
-    if (!group) return;
-    const arcs = Array.from(group.querySelectorAll("circle"));
-    const slices = data.minimums.walkRun !== null ? 4 : 3;
-    const k = 36 / 50; // Today's ring in the pet's units
-    const petCircle = 2 * Math.PI * 36;
-    const span = (2 * Math.PI * 50) / slices;
-    const from = { turn: -73, width: 12, dash: 54, offsets: [0, -75.4, -150.8] };
-    const to = { turn: -90, width: 14 * k, dash: (span - RING_SEGMENT_GAP) * k, offsets: arcs.map((_, i) => -i * span * k) };
-    const mix = (a, b, p) => a + (b - a) * p;
-    const draw = (p) => {
-      group.setAttribute("transform", `rotate(${mix(from.turn, to.turn, p)} 50 60)`);
-      const dash = mix(from.dash, to.dash, p);
-      arcs.forEach((arc, i) => {
-        arc.setAttribute("stroke-width", mix(from.width, to.width, p).toFixed(2));
-        arc.setAttribute("stroke-dasharray", `${dash.toFixed(2)} ${(petCircle - dash).toFixed(2)}`);
-        arc.setAttribute("stroke-dashoffset", mix(from.offsets[i], to.offsets[i], p).toFixed(2));
-      });
-    };
-    const step = () => {
-      const t = Math.min(1, (flight.currentTime || 0) / duration);
-      const p = Math.min(1, Math.max(0, (t - 0.2) / 0.75)); // mostly on the way down
-      draw(p * p * (3 - 2 * p));
-      if (flight.playState === "running") requestAnimationFrame(step);
-      else draw(1);
-    };
-    requestAnimationFrame(step);
-  }
-
-  // The jump: a copy of the pet leaves its spot, crouches, arcs down and
-  // grows until its ring body matches the big ring (morphFlyerRing). Today's
-  // ring fades out on the way, so the two never overlap, and is back the
-  // moment the pet lands - which is when the copy goes and the ring closes
-  // under it (showClosed "land"). Resolves true once it has landed, or false
-  // right away when there's nothing to animate (Reduce Motion, or the pet
-  // isn't at the top). Transform/opacity only, plus the flyer's ring.
+  // The jump: a still copy of the pet leaves its spot, crouches, arcs down
+  // and grows to the size of the pet inside the closed ring, right on the
+  // ring's middle. Today's ring fades out on the way and is back the moment
+  // the pet lands - which is when the copy goes and the ring closes around
+  // the real one (showClosed "land"). Resolves true once it has landed, or
+  // false right away when there's nothing to animate (Reduce Motion, or the
+  // pet isn't at the top). Transform/opacity only.
   function coachJump() {
     const pet = $("pet-coach-pet");
     const svg = pet.querySelector("svg");
@@ -1016,14 +614,21 @@ const Celebrations = (function () {
     const ringSvg = document.querySelector(".rings-svg");
     const ring = ringSvg.getBoundingClientRect();
     if (!from.width || !ring.width) return Promise.resolve(false);
-    const unit = from.width / 100; // the pet is drawn on a 100-wide grid, its ring r36 around (50, 60)
-    const scale = (ring.width * (50 / 120)) / (36 * unit); // ...the big ring is r50 on a 120 grid
-    const endX = ring.left + ring.width / 2 - scale * 50 * unit;
-    const endY = ring.top + ring.height / 2 - scale * 60 * unit;
+    // The pet's orb is 120 wide on its 140-wide grid, centered at (70, 75);
+    // in the ring it fills 120 of the face's 140 (pet.js VIEWBOX).
+    const unit = from.width / 140;
+    const faceWidth = $("ring-face").getBoundingClientRect().width || 118;
+    const scale = (faceWidth * (120 / 140)) / (120 * unit);
+    const endX = ring.left + ring.width / 2 - scale * 70 * unit;
+    const endY = ring.top + ring.height / 2 - scale * 75 * unit;
     const midX = (from.left + endX) / 2;
     const midY = Math.min(from.top, endY) - 60;
     const flyer = svg.cloneNode(true);
     flyer.classList.add("pet-coach-flyer");
+    // Drop the float it had at that moment, so it lands exactly on the
+    // still face in the ring (no few-px snap when they swap).
+    const bob = flyer.querySelector(".pet-bob");
+    if (bob) bob.removeAttribute("transform");
     flyer.style.width = from.width + "px";
     flyer.style.height = from.height + "px";
     document.body.appendChild(flyer);
@@ -1039,7 +644,6 @@ const Celebrations = (function () {
         ],
         { duration: 820, easing: "ease-out", fill: "forwards" }
       );
-      morphFlyerRing(flyer, flight, 820);
       ringSvg.animate([{ opacity: 1 }, { opacity: 1, offset: 0.15 }, { opacity: 0, offset: 0.5 }, { opacity: 0 }], { duration: 820 });
       // It landed exactly on Today's ring and face, so it just goes (a fade
       // would show two faces while the ring pops).
@@ -1089,7 +693,7 @@ const Celebrations = (function () {
       screen.setAttribute("aria-modal", "true");
       screen.setAttribute("aria-labelledby", "celebrate-title");
       screen.innerHTML = `
-        ${FlexPet.svg()}
+        ${ForjaPet.flexSVG()}
         <span class="celebrate-number">${streak - 1}</span>
         <h2 id="celebrate-title">${tr("{n}-day streak!", { n: streak })}</h2>
         <p>${line}</p>
@@ -1097,13 +701,11 @@ const Celebrations = (function () {
         ${canShare ? `<button class="auth-submit-button celebrate-share">${tr("Share My Streak")}</button>` : ""}
         <button class="${canShare ? "tracking-cancel-button" : "auth-submit-button"} celebrate-close">${tr("Continue")}</button>`;
       document.body.appendChild(screen);
-      // The number and confetti go off as the pet lands in its flex.
+      // The number and confetti go off as the pet lands in its flex (pet.js:
+      // shades on, then a double-bicep; still with Reduce Motion).
       const pet = screen.querySelector(".flex-pet");
-      if (reduced()) pet.classList.add("still");
-      else {
-        FlexPet.play(pet);
-        confetti(screen);
-      }
+      ForjaPet.playFlex(pet);
+      if (!reduced()) confetti(screen);
       const number = screen.querySelector(".celebrate-number");
       const bump = setTimeout(() => {
         number.textContent = streak;

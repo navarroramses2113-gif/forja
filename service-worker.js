@@ -15,6 +15,7 @@ const FILES_TO_CACHE = [
   "./i18n/i18n.js",
   "./i18n/i18n-guide-es.js",
   "./i18n/i18n-es.js",
+  "./js/pet.js",
   "./js/home-screen-guide.js",
   "./css/style.css",
   "./js/script.js",
