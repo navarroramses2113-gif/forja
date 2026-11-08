@@ -122,7 +122,9 @@ const ForjaPet = (function () {
       this.auto = mood === "auto"; // Today: follows the clock
       this.inRing = this.place === "ring";
       this.mood = this.auto ? moodNow() : mood;
-      this.sleep = this.auto || this.inRing ? sleepNow() : "awake";
+      // data-awake (the landing page): never sleeps, whatever the hour.
+      this.clock = (this.auto || this.inRing) && !svg.hasAttribute("data-awake");
+      this.sleep = this.clock ? sleepNow() : "awake";
       if (this.sleep === "drowsy") this.heavy = 0.45;
       this.phase = Math.random() * 6;
       svg.dataset.live = "1";
@@ -192,7 +194,7 @@ const ForjaPet = (function () {
     // The clock moved on: drowsy, asleep, morning, or a new mood.
     check() {
       if (this.auto) this.mood = moodNow();
-      if (!this.auto && !this.inRing) return;
+      if (!this.clock) return;
       const want = sleepNow();
       if (want === this.sleep || this.sleep === "groggy" || this.sleep === "falling") return;
       if (want === "asleep") this.fallAsleep();
@@ -399,10 +401,11 @@ const ForjaPet = (function () {
   new MutationObserver((changes) => changes.forEach((c) => c.addedNodes.forEach((node) => node.nodeType === 1 && mount(node)))).observe(document.documentElement, { childList: true, subtree: true });
 
   // mood: idle | happy | worried | sad | auto (Today's clock)
-  // place: "ring" for inside Today's closed ring; cheer: jump in on arrival.
-  function html(mood, place, cheer) {
+  // place: "ring" for inside Today's closed ring; cheer: jump in on arrival;
+  // awake: never sleeps (the landing page, seen at any hour).
+  function html(mood, place, cheer, awake) {
     const ring = place === "ring";
-    return `<svg class="${ring ? "pet-face" : "ob-mascot"} forja-pet" viewBox="${VIEWBOX[ring ? "ring" : "any"]}" data-mood="${mood}" data-place="${place || ""}"${cheer ? ' data-cheer="1"' : ""} aria-hidden="true"></svg>`;
+    return `<svg class="${ring ? "pet-face" : "ob-mascot"} forja-pet" viewBox="${VIEWBOX[ring ? "ring" : "any"]}" data-mood="${mood}" data-place="${place || ""}"${cheer ? ' data-cheer="1"' : ""}${awake ? " data-awake" : ""} aria-hidden="true"></svg>`;
   }
 
   // A set was saved: any pet that's asleep wakes for it (and dozes off 10

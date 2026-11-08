@@ -101,7 +101,7 @@
   /* after joining */
   .joined { display: grid; gap: 14px; padding: 20px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line); }
   .joined-top { display: flex; align-items: center; gap: 14px; }
-  .joined-top svg { width: 56px; height: 56px; flex-shrink: 0; }
+  .joined-top svg { width: 56px; height: 64px; flex-shrink: 0; }
   .joined h2 { margin: 0; font: 800 22px/1.15 var(--font-display); letter-spacing: -0.01em; }
   .joined p { margin: 2px 0 0; color: var(--text-2); font-size: 15px; }
   .place { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 700; }
@@ -166,7 +166,14 @@
 
   /* ring section */
   .ring-card { padding: 28px; border-radius: 28px; background: var(--panel); border: 1px solid var(--line); display: grid; gap: 22px; justify-items: center; }
-  .ring-big { width: min(220px, 60vw); height: auto; }
+  .ring-big { position: relative; width: min(220px, 60vw); }
+  .ring-big > svg:first-child { display: block; width: 100%; height: auto; }
+  /* The pet (pet.js), sized like inside Today's closed ring. */
+  .ring-big .pet-face { position: absolute; top: 50%; left: 50%; width: 66%; height: auto; transform: translate(-50%, -50%); }
+  .forja-pet { overflow: visible; }
+  .forja-pet .pet-shadow { fill: var(--text); fill-opacity: 0.14; }
+  .forja-pet .pet-orb { transform-box: fill-box; transform-origin: 50% 100%; }
+  .forja-pet .pet-spark { transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.7s ease-in; }
   .ring-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; text-align: center; }
   .ring-stats b { display: block; font: 800 24px var(--font-display); font-variant-numeric: tabular-nums; }
   .ring-stats span { font-size: 13px; color: var(--text-2); }

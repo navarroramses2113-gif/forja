@@ -26,7 +26,7 @@
   <meta property="og:url" content="https://getforja.app/">
   <meta property="og:title" content="Forja: become someone who works out">
   <meta property="og:description" content="Stop starting over. A few minutes a day at home, and your phone counts every rep.">
-  <meta property="og:image" content="https://getforja.app/og-image.png?v=2">
+  <meta property="og:image" content="https://getforja.app/og-image.png?v=3">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="The Forja pet inside its ring: become someone who works out">
@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/landing.css?v=1">
+  <link rel="stylesheet" href="css/landing.css?v=2">
 </head>
 <body>
 <div class="wrap">
@@ -130,17 +130,15 @@
         </ul>
       </div>
       <div class="ring-card">
-        <svg class="ring-big" viewBox="0 0 120 120" aria-hidden="true">
-          <g transform="rotate(-90 60 60)">
-            <circle cx="60" cy="60" r="48" fill="none" stroke="#ff5a5f" stroke-width="14" stroke-dasharray="80.5 221.1"/>
-            <circle cx="60" cy="60" r="48" fill="none" stroke="#ffc233" stroke-width="14" stroke-dasharray="80.5 221.1" stroke-dashoffset="-100.5"/>
-            <circle cx="60" cy="60" r="48" fill="none" stroke="#2dd4bf" stroke-width="14" stroke-dasharray="80.5 221.1" stroke-dashoffset="-201"/>
-          </g>
-          <circle cx="60" cy="60" r="33" fill="#fff6ea"/>
-          <ellipse cx="51" cy="56" rx="5" ry="6.2" fill="#1c1c1e"/><circle cx="52.7" cy="53.6" r="1.8" fill="#fff"/>
-          <ellipse cx="69" cy="56" rx="5" ry="6.2" fill="#1c1c1e"/><circle cx="70.7" cy="53.6" r="1.8" fill="#fff"/>
-          <path d="M52.5 66 Q60 74 67.5 66" stroke="#1c1c1e" stroke-width="3.4" fill="none" stroke-linecap="round"/>
-        </svg>
+        <div class="ring-big" id="ring-pet">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <g transform="rotate(-90 60 60)">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#ff5a5f" stroke-width="14" stroke-dasharray="80.5 221.1"/>
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#ffc233" stroke-width="14" stroke-dasharray="80.5 221.1" stroke-dashoffset="-100.5"/>
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#2dd4bf" stroke-width="14" stroke-dasharray="80.5 221.1" stroke-dashoffset="-201"/>
+            </g>
+          </svg>
+        </div>
         <div class="ring-stats">
           <div class="r"><b>25</b><span>push-ups</span></div>
           <div class="y"><b>1:10</b><span>plank</span></div>
@@ -260,7 +258,11 @@
      own small file. -->
 <script src="i18n/i18n.js?v=2"></script>
 <script src="i18n/i18n-landing-es.js?v=2"></script>
+<script src="js/pet.js?v=3"></script>
 <script>
+  // The pet inside the closed ring, spinning like on Today.
+  document.getElementById("ring-pet").insertAdjacentHTML("beforeend", ForjaPet.html("happy", "ring", false, true));
+
   // The example week's letters (a lookup can't tell Tuesday's T from Thursday's).
   if (ForjaI18n.lang === "es") {
     document.querySelectorAll(".streak-row span").forEach((day, i) => {
@@ -282,7 +284,7 @@
   const WAITLIST_KEY = "forja-waitlist";      // { code } once you've joined (this phone)
   const REF_KEY = "forja-waitlist-ref";       // the friend's code from their ?r= link
   const SOURCE_KEY = "forja-signup-source";   // shared with the app: where a visitor came from
-  const PET = '<svg viewBox="-6 0 112 112" aria-hidden="true"><g transform="rotate(-73 50 60)"><circle cx="50" cy="60" r="36" fill="none" stroke="#ff5a5f" stroke-width="12" stroke-linecap="round" stroke-dasharray="54 172.2"/><circle cx="50" cy="60" r="36" fill="none" stroke="#ffc233" stroke-width="12" stroke-linecap="round" stroke-dasharray="54 172.2" stroke-dashoffset="-75.4"/><circle cx="50" cy="60" r="36" fill="none" stroke="#2dd4bf" stroke-width="12" stroke-linecap="round" stroke-dasharray="54 172.2" stroke-dashoffset="-150.8"/></g><circle cx="50" cy="60" r="26.5" fill="#fff6ea"/><ellipse cx="41" cy="56" rx="5" ry="6.2" fill="#1c1c1e"/><circle cx="42.7" cy="53.6" r="1.8" fill="#fff"/><ellipse cx="59" cy="56" rx="5" ry="6.2" fill="#1c1c1e"/><circle cx="60.7" cy="53.6" r="1.8" fill="#fff"/><path d="M42.5 66 Q50 74 57.5 66" stroke="#1c1c1e" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>';
+  const PET = ForjaPet.html("happy"); // the real pet (pet.js)
   const store = {
     get(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } },
     set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} },
