@@ -16,14 +16,16 @@ The mark is the daily ring: three arcs (push-ups red, plank yellow, squats teal)
 
 ## The pet
 
-The coach from the sign-up flow: the logo's ring with a face inside. Square, transparent.
+An orb with a face, drawn from the app itself (js/pet.js) by forja-lab tools/export-pet.js, so these files always match the app. Transparent.
 
-| File | Mood |
+| File | Use it for |
 | --- | --- |
-| `forja-pet-happy.svg` / `forja-pet-happy-1024.png` | Happy: next to questions, everyday use. |
-| `forja-pet-wow.svg` / `forja-pet-wow-1024.png` | Wow: open mouth and sparkles, for celebrations. |
+| `forja-pet-orb.svg` / `forja-pet-orb-1024.png` | The pet alone, eyes open. Its everyday face. |
+| `forja-pet-happy.svg` / `forja-pet-happy-1024.png` | The pet inside the logo ring, eyes open. End cards, share images. |
+| `forja-pet-wow.svg` / `forja-pet-wow-1024.png` | Inside the ring: shiny eyes, open mouth, sparkles. Celebrations. |
+| `forja-pet-flex.svg` / `forja-pet-flex-1024.png` | Sunglasses and a double-bicep flex. Streak milestones. |
 
-Face colors: cream `#fff6ea`, eyes and mouth `#1c1c1e`.
+Default color Ember `#D85A30`, eyes `#2C2C2A`. People can recolor their own pet in the app; brand art uses Ember.
 
 The SVG words are drawn as shapes, so they look right anywhere without the font installed.
 
