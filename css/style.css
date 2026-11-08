@@ -5854,6 +5854,25 @@ a.account-menu-item {
   width: 100%;
 }
 
+/* Meet your new pet (script.js openPetIntroSheet): the name field and the
+   Your Pet swatches, as wide as the Done button. */
+.pet-intro-sheet .auth-fields,
+.pet-intro-sheet .pet-swatches {
+  align-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pet-intro-sheet .auth-fields input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pet-intro-sheet .pet-swatches {
+  margin-top: var(--space-md);
+  padding-inline: var(--space-sm);
+}
+
 /* The full Home Screen guide (home-screen-guide.js): after sign-up,
    Account > Add to Home Screen, and getforja.app/install. Same steps
    look as the sheet above, a little roomier. */
@@ -7443,6 +7462,12 @@ a.account-menu-item {
   color: var(--text-secondary);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Charcoal nearly disappears on dark cards: a stronger outline (Your Pet
+   and the "Meet your new pet" card both set the color inline). */
+.pet-swatch[style*="#2C2C2A" i] {
+  border-color: var(--text-muted);
 }
 
 .pet-swatch[aria-pressed="true"] {

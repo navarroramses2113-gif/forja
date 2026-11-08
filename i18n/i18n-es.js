@@ -939,6 +939,8 @@ window.FORJA_ES = Object.assign(window.FORJA_ES || {}, {
   "Name your pet": "Ponle nombre a tu mascota",
   "It cheers you on every day.": "Te echa porras todos los días.",
   "Pet name": "Nombre de tu mascota",
+  "Meet your new pet": "Conoce a tu nueva mascota",
+  "Give it a name and pick its color.": "Ponle nombre y elige su color.",
   "Skip": "Omitir",
 });
 

@@ -328,7 +328,7 @@ const Onboarding = (function () {
       centered: true,
       body: () => `${mascot("happy")}<h1 class="ob-title">${tr("Name your pet")}</h1><p class="ob-lead">${tr("It cheers you on every day.")}</p>
         <div class="auth-fields"><input id="ob-pet-name" enterkeyhint="done" placeholder="${tr("Pet name")}" maxlength="${ForjaPet.NAME_MAX}" autocomplete="off" aria-label="${tr("Pet name")}" value="${esc(state.petName)}"></div>`,
-      footer: () => cta(tr("Continue"), "pet-name", !state.petName.trim()) + quiet(tr("Skip"), "next"),
+      footer: () => cta(tr("Continue"), "pet-name", !state.petName.trim()) + quiet(tr("Skip"), "pet-skip"),
     },
     almost: {
       centered: true,
@@ -702,6 +702,11 @@ const Onboarding = (function () {
         return render();
       case "pet-name":
         ForjaPet.save({ name: state.petName.trim().slice(0, ForjaPet.NAME_MAX) });
+        return go(nextScreen());
+      case "pet-skip":
+        // Saves the default pet, so the "Meet your new pet" card (script.js,
+        // for older accounts) doesn't ask again right after.
+        ForjaPet.save({});
         return go(nextScreen());
       case "login": return goToLogin();
       case "camera": return openCamera();

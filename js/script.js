@@ -1252,7 +1252,7 @@ const SHARE_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 // outside is.
 function openHomeScreenSheet(moment) {
   const todayShown = !document.getElementById("app-screen").classList.contains("hidden") && !TABS.today.panel.classList.contains("hidden");
-  if (!todayShown || document.getElementById("notif-sheet") || !notifAskNow()) return;
+  if (!todayShown || document.getElementById("notif-sheet") || document.getElementById("pet-intro-sheet") || !notifAskNow()) return;
   notifAskShown();
   const scrim = document.createElement("div");
   scrim.id = "notif-sheet";
@@ -1275,6 +1275,51 @@ function openHomeScreenSheet(moment) {
   });
   document.body.appendChild(scrim);
   scrim.querySelector("[data-notif-sheet=ok]").focus();
+}
+
+// Meet the new pet: once, for people who signed up before it existed (no
+// pet saved yet; sign-up saves one, even on Skip). Name + color right in
+// the card; the pet recolors as they tap. Any way out (Done, Not Now, a
+// tap outside) saves the pet, so it never shows again, on any device.
+function openPetIntroSheet() {
+  const todayShown = !document.getElementById("app-screen").classList.contains("hidden") && !TABS.today.panel.classList.contains("hidden");
+  const busy = document.getElementById("pet-intro-sheet") || document.getElementById("notif-sheet") || document.querySelector(".celebrate-screen");
+  if (!data || data.pet || !todayShown || busy || Onboarding.isActive() || cameraIsOpen()) return;
+  const c = ForjaPet.config();
+  const swatches = ForjaPet.BODIES.map(([name, hex]) => `<button type="button" class="pet-swatch" data-body="${hex}" aria-label="${tr(name)}" aria-pressed="${hex === c.body}" style="background:${hex}"></button>`).join("");
+  const scrim = document.createElement("div");
+  scrim.id = "pet-intro-sheet";
+  scrim.className = "challenge-scrim";
+  scrim.innerHTML = `
+    <div class="challenge-sheet notif-sheet pet-intro-sheet" role="dialog" aria-modal="true" aria-labelledby="pet-intro-title">
+      <span class="challenge-grabber"></span>
+      <span class="notif-sheet-pet">${ForjaPet.html("happy")}</span>
+      <h2 id="pet-intro-title">${tr("Meet your new pet")}</h2>
+      <p class="notif-sheet-sub">${tr("Give it a name and pick its color.")}</p>
+      <div class="auth-fields"><input id="pet-intro-name" enterkeyhint="done" placeholder="${tr("Pet name")}" maxlength="${ForjaPet.NAME_MAX}" autocomplete="off" aria-label="${tr("Pet name")}"></div>
+      <div class="pet-swatches" role="group" aria-label="${tr("Color")}">${swatches}</div>
+      <button class="auth-submit-button" data-pet-intro="done">${tr("Done")}</button>
+      <button class="challenge-text-button is-muted" data-pet-intro="later">${tr("Not Now")}</button>
+    </div>`;
+  const nameEl = scrim.querySelector("#pet-intro-name");
+  scrim.addEventListener("click", (event) => {
+    const swatch = event.target.closest("[data-body]");
+    if (swatch) {
+      ForjaPet.save({ body: swatch.dataset.body }); // repaints every pet on screen
+      scrim.querySelectorAll("[data-body]").forEach((b) => b.setAttribute("aria-pressed", String(b === swatch)));
+      return;
+    }
+    const button = event.target.closest("[data-pet-intro]");
+    if (event.target !== scrim && !button) return;
+    const name = button && button.dataset.petIntro === "done" ? nameEl.value.trim().slice(0, ForjaPet.NAME_MAX) : "";
+    ForjaPet.save(name ? { name } : {});
+    scrim.remove();
+  });
+  nameEl.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") nameEl.blur();
+  });
+  document.body.appendChild(scrim);
+  scrim.querySelector("[data-pet-intro=done]").focus();
 }
 
 reminderHourEl.addEventListener("change", () => {
@@ -2204,7 +2249,10 @@ function revealApp(show = true) {
   renderMinTags();
   renderSettingsInputs();
   updateMeTabAuthSection();
-  if (show) showScreen("app-screen");
+  if (show) {
+    showScreen("app-screen");
+    setTimeout(openPetIntroSheet, 1500); // checks again then: Today still up, nothing else open
+  }
 }
 
 // Runs once we know someone is logged in: loads their data from the
