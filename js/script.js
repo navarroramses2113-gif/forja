@@ -2305,6 +2305,7 @@ async function showApp(userId, reopened = false) {
   syncLanguage();
   acceptPendingInvite();
   loadWeekRecap();
+  if (typeof Challenges !== "undefined") Challenges.refreshToday();
 
   if (signingUp) {
     // The sign-up flow carries on (reminders, friends) from here.
@@ -2428,6 +2429,7 @@ document.addEventListener("visibilitychange", () => {
   refreshMyColor();
   loadWeekRecap();
   refreshServerNumbers();
+  if (typeof Challenges !== "undefined") Challenges.refreshToday();
 });
 
 // The streak, today's verified sets and the plan, fresh from the server -
@@ -2753,9 +2755,13 @@ function showTab(tabName) {
     TABS[name].panel.classList.toggle("hidden", !isActive);
     TABS[name].button.classList.toggle("active", isActive);
   }
+  if (TabLens) TabLens.moveTo(tabName);
 
   if (tabName === "today" && typeof Celebrations !== "undefined") {
     Celebrations.enterToday(); // the pet hops back in and says where things stand
+  }
+  if (tabName === "today" && typeof Challenges !== "undefined") {
+    Challenges.refreshToday();
   }
   if (tabName === "feed") {
     enterFeedTab();
@@ -2773,11 +2779,162 @@ function showTab(tabName) {
   }
 }
 
-TABS.today.button.addEventListener("click", () => showTab("today"));
-TABS.feed.button.addEventListener("click", () => showTab("feed"));
-TABS.competition.button.addEventListener("click", () => showTab("competition"));
-TABS.me.button.addEventListener("click", () => showTab("me"));
-TABS.record.button.addEventListener("click", () => showTab("record"));
+// The tab bar's glass lens (iOS 26 style). It sits behind the current tab.
+// Hold the bar and it grows into clear glass you can drag across the tabs;
+// let go and it springs onto the nearest one, which opens. A plain tap
+// slides it over the same way. Pointer taps are handled here; the click
+// listeners below only catch the keyboard (Enter/Space on a tab).
+// Declared with var so showTab() can safely check it before this runs.
+var TabLens = (function () {
+  const bar = document.querySelector(".tab-bar");
+  const lens = bar && bar.querySelector(".tab-lens");
+  if (!bar || !lens) return null;
+  const buttons = Array.from(bar.querySelectorAll(".tab-btn"));
+  const icons = buttons.map((b) => b.querySelector(".tab-icon"));
+  const names = buttons.map((b) => b.id.replace("tab-btn-", ""));
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // spring state: x = lens position, s = lens scale (1 at rest, 1.2 held)
+  const st = { x: 0, v: 0, tx: 0, s: 1, sv: 0, ts: 1 };
+  let tabW = 0;
+  let current = Math.max(0, buttons.findIndex((b) => b.classList.contains("active")));
+  let raf = 0, last = 0;
+  let held = false, moved = false, grabOffset = 0, downX = 0;
+
+  const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+  const maxX = () => tabW * (buttons.length - 1);
+
+  function measure() {
+    const w = (bar.clientWidth - 8) / buttons.length;
+    if (!w || w === tabW) return;
+    tabW = w;
+    lens.style.width = tabW + "px";
+    if (!held) {
+      st.x = st.tx = current * tabW;
+      st.v = 0;
+      paint();
+    }
+  }
+
+  function paint() {
+    // stretches along the motion while it moves fast, like a drop of liquid
+    const stretch = reduceMotion.matches ? 0 : Math.min(Math.abs(st.v) / 2600, 0.28);
+    lens.style.transform = `translateX(${st.x}px) scale(${st.s * (1 + stretch)}, ${st.s * (1 - stretch * 0.45)})`;
+    // icons under a held lens grow a little, like a magnifier
+    const center = st.x + tabW / 2;
+    icons.forEach((icon, i) => {
+      const near = tabW ? Math.max(0, 1 - Math.abs((i + 0.5) * tabW - center) / tabW) : 0;
+      const k = near * Math.max(0, st.s - 1) / 0.2;
+      icon.style.transform = k > 0.001 ? `scale(${1 + 0.14 * k})` : "";
+    });
+    if (held && tabW) {
+      const under = clamp(Math.round(st.x / tabW), 0, buttons.length - 1);
+      buttons.forEach((b, i) => b.classList.toggle("active", i === under));
+    }
+  }
+
+  function step(now) {
+    const dt = Math.min((now - last) / 1000, 1 / 30);
+    last = now;
+    // a slightly bouncy spring: overshoots a touch, then settles
+    st.v += (-420 * (st.x - st.tx) - 26 * st.v) * dt;
+    st.x += st.v * dt;
+    st.sv += (-500 * (st.s - st.ts) - 22 * st.sv) * dt;
+    st.s += st.sv * dt;
+    paint();
+    const still = Math.abs(st.x - st.tx) < 0.2 && Math.abs(st.v) < 2 && Math.abs(st.s - st.ts) < 0.002 && Math.abs(st.sv) < 0.02;
+    if (still && !held) {
+      st.x = st.tx; st.v = 0; st.s = st.ts; st.sv = 0;
+      paint();
+      raf = 0;
+      return;
+    }
+    raf = requestAnimationFrame(step);
+  }
+
+  function animate() {
+    if (reduceMotion.matches) {
+      st.x = st.tx; st.v = 0; st.s = st.ts; st.sv = 0;
+      paint();
+      return;
+    }
+    if (!raf) {
+      last = performance.now();
+      raf = requestAnimationFrame(step);
+    }
+  }
+
+  // Called by showTab(), so the lens follows every way a tab opens.
+  function moveTo(name) {
+    const i = names.indexOf(name);
+    if (i < 0) return;
+    current = i;
+    buttons.forEach((b, j) => {
+      if (j === i) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    });
+    measure();
+    st.tx = i * tabW;
+    animate();
+  }
+
+  const localX = (e) => e.clientX - bar.getBoundingClientRect().left - 4;
+
+  bar.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    measure();
+    try { bar.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
+    held = true; moved = false; downX = e.clientX;
+    const px = localX(e);
+    // grabbing the lens keeps it under the finger where it was grabbed;
+    // pressing another tab pulls the lens over to it
+    grabOffset = px >= st.x && px <= st.x + tabW ? px - st.x : tabW / 2;
+    st.tx = clamp(px - grabOffset, 0, maxX());
+    st.ts = reduceMotion.matches ? 1 : 1.2;
+    lens.classList.add("pressed");
+    animate();
+  });
+
+  bar.addEventListener("pointermove", (e) => {
+    if (!held) return;
+    if (Math.abs(e.clientX - downX) > 4) moved = true;
+    st.tx = clamp(localX(e) - grabOffset, 0, maxX());
+    if (reduceMotion.matches) animate();
+  });
+
+  function letGo(e, cancelled) {
+    if (!held) return;
+    held = false;
+    lens.classList.remove("pressed");
+    st.ts = 1;
+    let i = current;
+    if (!cancelled && tabW) {
+      i = moved ? Math.round(st.tx / tabW) : Math.floor(localX(e) / tabW);
+      i = clamp(i, 0, buttons.length - 1);
+    }
+    // put the green back on the real tab before showTab() takes over
+    buttons.forEach((b, j) => b.classList.toggle("active", j === current));
+    if (cancelled) moveTo(names[current]);
+    else showTab(names[i]); // same as a tap always did, even on the open tab
+  }
+
+  bar.addEventListener("pointerup", (e) => letGo(e, false));
+  bar.addEventListener("pointercancel", (e) => letGo(e, true));
+
+  if (window.ResizeObserver) new ResizeObserver(measure).observe(bar);
+  window.addEventListener("resize", measure);
+  measure();
+
+  return { moveTo };
+})();
+
+// Keyboard only (a pointer tap arrives with detail >= 1 and is handled by
+// TabLens above, so a tab never opens twice).
+for (const name in TABS) {
+  TABS[name].button.addEventListener("click", (e) => {
+    if (e.detail === 0 || !TabLens) showTab(name);
+  });
+}
 
 // Reusable icon markup - defined once, inserted wherever needed via
 // template literals, instead of repeating the same SVG code every time.

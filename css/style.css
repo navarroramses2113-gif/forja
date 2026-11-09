@@ -106,6 +106,16 @@ input[type="number"]::-webkit-inner-spin-button {
   --control-bg: #3a3a3a;
   --overlay: #ffffff12;
   --nav-bg: rgba(20, 20, 22, 0.75);
+  /* the floating glass tab bar and its selection lens */
+  --glass-bg: #2a2a2e8c;
+  --glass-rim-hi: #ffffff4d;
+  --glass-rim-lo: #ffffff0f;
+  --glass-shadow: #00000080;
+  --glass-edge: #ffffff14;
+  --lens-bg: #ffffff1f;
+  --lens-press-bg: #ffffff26;
+  --lens-press-rim: #ffffff66;
+  --lens-press-shadow: #00000066;
   --heatmap-empty: #27272a;
   /* A rest day that kept the streak: halfway between an empty day and a
      workout day (solid - a see-through green goes muddy on black). */
@@ -159,6 +169,15 @@ input[type="number"]::-webkit-inner-spin-button {
   --control-bg: #d1d1d6;
   --overlay: #0000001a;
   --nav-bg: rgba(255, 255, 255, 0.8);
+  --glass-bg: #ffffff8c;
+  --glass-rim-hi: #ffffffe6;
+  --glass-rim-lo: #ffffff40;
+  --glass-shadow: #0000001f;
+  --glass-edge: #0000000f;
+  --lens-bg: #0000000f;
+  --lens-press-bg: #ffffff59;
+  --lens-press-rim: #ffffffcc;
+  --lens-press-shadow: #00000026;
   --heatmap-empty: #e5e5ea;
   --heatmap-rest: #22c55e59;
   --heatmap-rest-mark: #15803d;
@@ -575,53 +594,106 @@ body {
   display: none !important;
 }
 
-/* A single unified strip along the bottom of the card, like a mobile
-   app's bottom navigation bar - one row, evenly split between buttons. */
+/* The tab bar: a floating pill of frosted glass (iOS 26 style). A lens
+   sits behind the current tab; hold the bar and it grows into clear glass
+   you can drag across the tabs (TabLens in script.js). */
 .tab-bar {
+  position: relative;
   display: flex;
-  margin-top: var(--space-lg);
-  padding-top: var(--space-sm);
-  padding-bottom: var(--space-xs);
-  border-top: 1px solid var(--border);
-  margin-left: calc((var(--space-lg) + var(--safe-left)) * -1);
-  margin-right: calc((var(--space-lg) + var(--safe-right)) * -1);
-  padding-left: calc(var(--space-sm) + var(--safe-left));
-  padding-right: calc(var(--space-sm) + var(--safe-right));
-  /* iOS's native tab bars are frosted glass, not a flat color - this is
-     one of the most recognizable Apple UI materials. */
-  background: var(--nav-bg);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  height: 62px;
+  max-width: 420px;
+  margin: var(--space-lg) auto 0;
+  padding: 4px;
+  border-radius: 31px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(14px) saturate(1.8);
+  backdrop-filter: blur(14px) saturate(1.8);
+  box-shadow: 0 8px 28px var(--glass-shadow), 0 0 0 0.5px var(--glass-edge);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The bright rim light, brightest top-left and bottom-right. */
+.tab-bar::after,
+.tab-lens::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(140deg, var(--glass-rim-hi), var(--glass-rim-lo) 35%, var(--glass-rim-lo) 65%, var(--glass-rim-hi));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.tab-lens {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  border-radius: 27px;
+  background: var(--lens-bg);
+  pointer-events: none;
+  will-change: transform;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tab-lens::after {
+  opacity: 0;
+  background: linear-gradient(140deg, var(--lens-press-rim), transparent 40%, transparent 60%, var(--lens-press-rim));
+  transition: opacity 0.2s ease;
+}
+
+.tab-lens.pressed {
+  background: var(--lens-press-bg);
+  box-shadow: 0 6px 18px var(--lens-press-shadow);
+}
+
+.tab-lens.pressed::after {
+  opacity: 1;
 }
 
 .tab-btn {
+  position: relative;
   flex: 1;
+  min-width: 0;
+  min-height: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
-  padding: 6px 4px;
+  padding: 0;
   font-family: inherit;
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-muted);
+  color: var(--text-primary);
+  -webkit-tap-highlight-color: transparent;
   transition: color 0.15s ease;
 }
 
+.tab-btn:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: -2px;
+  border-radius: 27px;
+}
+
 .tab-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 /* Only the drawing dims on an inactive tab - not the tab's red dot. */
 .tab-icon {
   position: relative;
-}
-
-.tab-icon svg {
-  opacity: 0.6;
-  transition: opacity 0.15s ease;
+  display: block;
+  transform-origin: 50% 60%;
 }
 
 /* A small unread-style dot on a tab icon (e.g. a pending friend request
@@ -640,15 +712,12 @@ body {
 
 .tab-text {
   font-size: var(--font-tab);
-  font-weight: 700;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .tab-btn.active {
   color: var(--accent-text);
-}
-
-.tab-btn.active .tab-icon svg {
-  opacity: 1;
 }
 
 /* This has to come AFTER the unconditional .tab-bar rule above, not
@@ -662,23 +731,22 @@ body {
   /* Pin the tab bar to the bottom of the actual screen instead of
      leaving it in normal document flow - otherwise it sits right after
      whichever tab's content happens to be visible, so it visually jumps
-     to a different height every time you switch tabs. Fixed positioning
-     also means the negative-margin edge-to-edge trick above is no longer
-     needed here, since left:0/right:0 already spans the full viewport. */
+     to a different height every time you switch tabs. It floats 16px in
+     from each side and just above the home bar, like iOS 26; on a phone
+     turned sideways it stops at 420px wide, centered. */
   .tab-bar {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    margin: 0;
-    padding-bottom: calc(var(--space-xs) + var(--safe-bottom));
+    left: calc(16px + var(--safe-left));
+    right: calc(16px + var(--safe-right));
+    bottom: max(12px, calc(var(--safe-bottom) - 8px));
+    margin: 0 auto;
     z-index: 100;
   }
 
   /* Leaves room at the bottom of every tab's content so its last item
      isn't hidden underneath the now-floating tab bar. */
   .tab-panel {
-    padding-bottom: 90px;
+    padding-bottom: calc(96px + var(--safe-bottom));
   }
 }
 
@@ -4709,6 +4777,103 @@ a.account-menu-item {
 /* Under the leaderboard: the same gap as between the other sections. */
 .challenges-heading {
   margin-top: var(--space-sm);
+}
+
+/* Running challenges on Today, under the exercises: each one is a small
+   preview of its standings; tapping it opens the full view. */
+.today-challenges {
+  margin-top: var(--space-lg);
+}
+
+.today-preview {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.today-preview:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.today-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.today-preview .challenge-days {
+  margin: 12px 0 4px;
+}
+
+.today-preview-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.today-preview-row {
+  display: grid;
+  grid-template-columns: 16px 28px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 6px;
+}
+
+.today-preview-row.no-rank {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+}
+
+.today-preview-row.is-out {
+  opacity: 0.45;
+}
+
+.today-preview-row .leaderboard-rank {
+  width: auto;
+  font-size: var(--font-footnote);
+}
+
+.today-preview-row .challenge-standing-bar {
+  grid-column: 3 / -1;
+}
+
+.today-preview-row .challenge-state {
+  width: 24px;
+  height: 24px;
+}
+
+.today-preview-row .challenge-state svg {
+  width: 14px;
+  height: 14px;
+}
+
+.today-preview-name {
+  overflow: hidden;
+  font-size: var(--font-subhead);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today-preview-value {
+  font-size: var(--font-subhead);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.today-preview-value small {
+  margin-left: 2px;
+  font-size: var(--font-caption);
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 /* Challenges need an account with a username, like the leaderboard. */

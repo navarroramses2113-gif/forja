@@ -77,7 +77,7 @@ const Challenges = (function () {
 
   // list: the server's challenges (null until loaded), trophies, the draft
   // being set up, and the friends you can invite (null until loaded).
-  const state = { userId: null, list: null, trophies: [], error: false, loading: null, draft: null, friends: null, opened: new Set(), view: null, sending: false };
+  const state = { userId: null, list: null, trophies: [], error: false, loading: null, loadedAt: 0, draft: null, friends: null, opened: new Set(), view: null, sending: false, from: "competition" };
 
   const signedIn = () => typeof currentUserId !== "undefined" && !!currentUserId;
   const timeZone = () => {
@@ -121,12 +121,14 @@ const Challenges = (function () {
       if (asking !== currentUserId) return null;
       if (reply && reply.ok) {
         state.list = reply.challenges;
+        state.loadedAt = Date.now();
         state.trophies = reply.trophies;
         (reply.challenges || []).forEach((c) => rememberAvatarColors((c.players || []).map((p) => ({ username: p.name, avatar_color: p.color }))));
         state.error = false;
       } else {
         state.error = true;
       }
+      renderToday();
       return reply;
     });
     return state.loading;
@@ -163,6 +165,33 @@ const Challenges = (function () {
     renderTrophies();
     openNewResult();
   }
+
+  // ---------- Today ----------
+  // Challenges you're still in also show under the exercises on Today, so
+  // they're one tap away instead of a scroll down Competition.
+  function renderToday() {
+    const box = $("today-challenges");
+    if (!box) return;
+    const stillIn = (c) => {
+      const me = (c.players || []).find((p) => p.you);
+      return !me || me.outDay === null || me.outDay === undefined;
+    };
+    const running = ENABLED && signedIn() && state.userId === currentUserId && state.list
+      ? state.list.filter((c) => c.status === "running" && c.myStatus === "joined" && stillIn(c))
+      : [];
+    box.classList.toggle("hidden", running.length === 0);
+    $("today-challenge-list").innerHTML = running.map(previewCard).join("");
+  }
+
+  // Called when Today opens and when the app comes back. Draws what's
+  // known at once; asks the server again at most once a minute.
+  function refreshToday() {
+    renderToday();
+    if (ENABLED && signedIn() && (state.userId !== currentUserId || Date.now() - state.loadedAt > 60000)) load();
+  }
+
+  // Back from a challenge goes to wherever it was opened from.
+  const backHome = () => backButton(state.from === "today" ? tr("Today") : tr("Competition"), "tab");
 
   // Invites first, then the ones waiting to start, running, and finished.
   const ORDER = (c) => (c.myStatus === "invited" ? 0 : c.status === "pending" ? 1 : c.status === "running" ? 2 : 3);
@@ -210,6 +239,37 @@ const Challenges = (function () {
       </button>`;
   }
 
+  // Today's version of a card: the same header plus a small look at the
+  // standings (top 3, or the top 2 and you), so it reads without opening.
+  function previewCard(c) {
+    const [plain, bold] = cardLine(c);
+    const head = `<span class="today-preview-head">${tile(challengeColor(c), challengeIcon(c))}
+        <span class="challenge-card-text"><span class="challenge-card-name">${esc(nameOf(c))}</span><span class="challenge-card-sub">${esc(plain)}${bold ? ` · <b>${esc(bold)}</b>` : ""}</span></span>
+        <span class="challenge-chevron">${ICON.chevron}</span></span>`;
+    const who = (p) => `${avatar(p.name)}<span class="today-preview-name">${p.you ? tr("You") : esc(p.name)}</span>`;
+    let body;
+    if (c.type === "rep" || c.type === "dist") {
+      const max = Math.max(1, ...c.players.map((p) => p.score));
+      const placed = c.players.map((p) => ({ p, place: 1 + c.players.filter((o) => o.score > p.score).length }))
+        .sort((a, b) => a.place - b.place);
+      let rows = placed.slice(0, 3);
+      const mine = placed.find((r) => r.p.you);
+      if (mine && !rows.includes(mine)) rows = [...placed.slice(0, 2), mine];
+      body = dayBar(Math.min(c.dayNumber, c.days), c.days, challengeColor(c)) + `<span class="today-preview-rows">${rows.map(({ p, place }) => `
+        <span class="today-preview-row ${p.you ? "is-you" : ""}"><span class="leaderboard-rank ${place === 1 ? "is-first" : ""}">${place}</span>${who(p)}
+          <span class="today-preview-value">${esc(scoreText(c, p.score))}${scoreUnit(c) ? `<small>${scoreUnit(c)}</small>` : ""}</span>
+          <span class="challenge-standing-bar"><i style="width:${Math.round((p.score / max) * 100)}%"></i></span></span>`).join("")}</span>`;
+    } else {
+      // You first, then who's still in, then who's out.
+      const rank = (p) => (p.you ? 0 : p.outDay === null ? 1 : 2);
+      const rows = [...c.players].sort((a, b) => rank(a) - rank(b)).slice(0, 3);
+      const icon = (p) => (p.outDay !== null ? `<span class="challenge-state is-out">${ICON.x}</span>` : p.doneToday ? `<span class="challenge-state is-done">${ICON.check}</span>` : `<span class="challenge-state is-waiting">${ICON.clock}</span>`);
+      body = `<span class="today-preview-rows">${rows.map((p) => `
+        <span class="today-preview-row no-rank ${p.outDay !== null ? "is-out" : ""}">${who(p)}${icon(p)}</span>`).join("")}</span>`;
+    }
+    return `<button class="today-preview" style="--c:${challengeColor(c)}" data-ch-open="${esc(c.id)}">${head}${body}</button>`;
+  }
+
   function renderList() {
     const listEl = $("challenge-list");
     if (state.list === null) {
@@ -254,7 +314,7 @@ const Challenges = (function () {
     closeTip();
     state.view = null;
     showScreen("app-screen");
-    showTab("competition");
+    showTab(state.from === "today" ? "today" : "competition");
   }
 
   function typeView() {
@@ -446,7 +506,7 @@ const Challenges = (function () {
   function header(c) {
     const long = c.type === "lms";
     return `
-      ${backButton(tr("Competition"), "tab")}
+      ${backHome()}
       <div class="challenge-title-row">${tile(challengeColor(c), challengeIcon(c))}<h1 class="large-title ${long ? "is-long" : ""}">${esc(nameOf(c))}</h1>${tipButton(c.type)}</div>`;
   }
 
@@ -503,6 +563,7 @@ const Challenges = (function () {
 
   // ---------- results ----------
   function resultView(c) {
+    state.from = "competition"; // results only show from Competition
     state.opened.add(c.id);
     if (c.unseenResult) {
       c.unseenResult = false;
@@ -671,8 +732,12 @@ const Challenges = (function () {
     if (!el) return;
     const d = state.draft;
 
-    if (el.id === "new-challenge-button") return typeView();
+    if (el.id === "new-challenge-button") {
+      state.from = "competition";
+      return typeView();
+    }
     if (el.dataset.chOpen) {
+      state.from = el.closest("#today-challenges") ? "today" : "competition";
       const c = find(el.dataset.chOpen);
       if (!c) return;
       if (c.myStatus === "invited") return openInvite(c);
@@ -709,6 +774,7 @@ const Challenges = (function () {
 
     switch (el.dataset.chAct) {
       case "new":
+        state.from = "competition";
         return typeView();
       case "retry":
         state.error = false;
@@ -749,5 +815,5 @@ const Challenges = (function () {
     }
   });
 
-  return { refresh, showTrophies };
+  return { refresh, showTrophies, refreshToday };
 })();

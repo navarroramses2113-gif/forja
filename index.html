@@ -34,7 +34,7 @@
       }
     } catch (e) {}
   </script>
-  <link rel="stylesheet" href="css/style.css?v=42">
+  <link rel="stylesheet" href="css/style.css?v=45">
 
   <!-- Leaflet (the live walk map) loads once the app is on screen: see
        loadLeaflet() in script.js. Opening the app doesn't wait for it. -->
@@ -759,6 +759,12 @@
         <input type="number" id="walkrun" value="0" readonly tabindex="-1" aria-label="Verified walk or run minutes today">
       </div>
 
+      <!-- Running challenges, one tap away (challenges.js draws them). -->
+      <div id="today-challenges" class="today-challenges hidden">
+        <p class="section-heading challenges-heading">Challenges</p>
+        <div id="today-challenge-list" class="challenge-list"></div>
+      </div>
+
       <p id="error-message" class="error"></p>
 
       <!-- Today logs itself once every minimum is hit; this only appears if
@@ -969,6 +975,7 @@
     </div>
 
     <nav class="tab-bar">
+      <span class="tab-lens" aria-hidden="true"></span>
       <button id="tab-btn-today" class="tab-btn active">
         <span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span>
         <span class="tab-text">Today</span>
@@ -1028,8 +1035,8 @@
   <script src="js/pet.js?v=3"></script>
   <script src="js/home-screen-guide.js?v=1"></script>
   <script src="js/onboarding.js?v=17"></script>
-  <script src="js/script.js?v=44"></script>
-  <script src="js/challenges.js?v=8"></script>
+  <script src="js/script.js?v=46"></script>
+  <script src="js/challenges.js?v=10"></script>
   <script src="js/celebrations.js?v=14"></script>
 </body>
 </html>
