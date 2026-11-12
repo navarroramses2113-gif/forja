@@ -24,6 +24,7 @@
 /supabase/functions/_shared/exercise-counter.js /shared/exercise-counter.js  200
 
 /supabase/*                                     /404.html  404!
+/CLAUDE.md                                      /404.html  404!
 
 # The front page. getforja.app/ shows landing.html; the app stays at
 # /index.html (the Home Screen app opens that, see manifest.json). An invite
