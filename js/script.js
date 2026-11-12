@@ -1378,7 +1378,7 @@ function todayProgress() {
 // of 5 is 10); a plank keeps the best single hold, since the minimum is
 // one unbroken hold, not a total.
 function recordVerifiedSet(exerciseKey, value) {
-  if (data.lastLoggedDate === todayString() || !(value > 0)) return;
+  if (!(value > 0)) return;
 
   // A guest's best single set, for "New best set" (signed in, the server's
   // verified sets say it - see loadBestSet).
@@ -1469,7 +1469,7 @@ async function saveCameraSet({ exercise, value, trace }) {
   const key = { pushup: "pushups", plank: "planks", squat: "squats" }[exercise];
   const before = todayProgress()[key];
   const celebrate = (counted) => {
-    if (typeof Celebrations === "undefined" || data.lastLoggedDate === todayString()) return;
+    if (typeof Celebrations === "undefined") return;
     Celebrations.setSaved(exercise, before, key === "planks" ? Math.max(before, counted) : before + counted);
   };
   if (!currentUserId) {
@@ -1578,9 +1578,8 @@ function render() {
   updateRings(loggedToday);
   if (typeof Celebrations !== "undefined") Celebrations.renderToday(loggedToday, progress);
 
-  document.querySelectorAll(".verify-button").forEach((button) => {
-    button.disabled = loggedToday;
-  });
+  // Verify stays on after the day is done: extra sets still count
+  // (challenges, totals), they just can't log the day twice.
 
   const walkRunEnabled = data.minimums.walkRun !== null;
   walkrunRowEl.classList.toggle("hidden", !walkRunEnabled);

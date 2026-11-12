@@ -114,7 +114,10 @@ const Celebrations = (function () {
     const key = KEY_OF[exercise];
     if (!key || !(after > before) || inSignUp()) return;
     const target = Math.max(data.minimums[key], 1);
-    ringHold[key] = before / target;
+    // An extra set on a finished day: just the "+N" and the count. The
+    // ring is already closed, so it stays as it is.
+    const dayDone = data.lastLoggedDate === todayString();
+    if (!dayDone) ringHold[key] = before / target;
     valueHold[key] = before;
     enqueue(async () => {
       await wait(250); // let Today settle after the camera closes
@@ -133,12 +136,13 @@ const Celebrations = (function () {
         input.value = after;
       } else {
         countUp(input, before, after, FILL_MS);
-        await frames(FILL_MS, (t) => drawRingSlice(key, from + (to - from) * easeOut(t)));
+        if (dayDone) await wait(FILL_MS);
+        else await frames(FILL_MS, (t) => drawRingSlice(key, from + (to - from) * easeOut(t)));
         input.value = after;
       }
       delete ringHold[key];
       updateRings(data.lastLoggedDate === todayString());
-      if (from < 1 && to >= 1 && !reduced()) {
+      if (!dayDone && from < 1 && to >= 1 && !reduced()) {
         const slice = $("ring-" + key);
         await frames(320, (t) => {
           slice.style.strokeWidth = 14 + 5 * Math.sin(Math.PI * t);
