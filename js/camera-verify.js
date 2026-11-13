@@ -623,15 +623,10 @@ const ForjaCamera = (function () {
     Sound.prime();
     $("camera-start-button").disabled = true;
     setFeedback("", "");
-    say(tr("Loading pose model (first time only)..."));
-    try {
-      await loadModel();
-    } catch (err) {
-      say(tr("Couldn't load the camera model - check your connection and try again."), true);
-      $("camera-start-button").disabled = false;
-      return;
-    }
-
+    // The model and the camera start together: each takes a second or more,
+    // and neither needs the other until the first frame is read.
+    const modelReady = loadModel();
+    modelReady.catch(() => {}); // handled below, after the camera
     say(tr("Starting camera..."));
     try {
       await startStream();
@@ -645,6 +640,17 @@ const ForjaCamera = (function () {
       $("camera-start-button").disabled = false;
       return;
     }
+
+    if (!poseLandmarker) say(tr("Loading pose model (first time only)..."));
+    try {
+      await modelReady;
+    } catch (err) {
+      stopStream();
+      say(tr("Couldn't load the camera model - check your connection and try again."), true);
+      $("camera-start-button").disabled = false;
+      return;
+    }
+    if (!stream) return; // the camera was closed while the model loaded
 
     clearBackup(); // a new set: whatever was kept is done with
     newSession();
@@ -1123,6 +1129,13 @@ const ForjaCamera = (function () {
   }
 
   return {
+    // Gets the pose model ready ahead of time. The store app calls this
+    // after it opens (its model is packed in, nothing to download), so the
+    // first set doesn't wait on it. The website still loads it on first use.
+    preload() {
+      loadModel().catch(() => {}); // a set started later retries and reports it
+    },
+
     // options: { onClose, reward, progress: { before, target, hold },
     // backup: { user, day } } - progress fills the live ring; backup keeps
     // the set on this phone until it's saved (see BACKUP_KEY).
