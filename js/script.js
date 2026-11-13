@@ -5684,6 +5684,26 @@ document.addEventListener("visibilitychange", () => {
   session.hiddenAt = null;
 });
 
+// The iPhone app shows a running walk on the Lock Screen and in the
+// Dynamic Island (forja-app's native.js defines window.forjaWalkCard; the
+// website has none, so this does nothing there). The card keeps itself up
+// to date from the phone's GPS while Forja is locked; these calls just
+// mark the start, pauses and end, and hand over the page's own totals.
+function updateWalkCard(state) {
+  if (typeof window.forjaWalkCard !== "function" || !session) return;
+  try {
+    window.forjaWalkCard({
+      state, // "tracking" | "paused" | "ended"
+      elapsedMs: elapsedTrackingMs(),
+      distanceKm: session.distanceKm,
+      units: data.units === "km" ? "km" : "mi",
+      labels: { title: tr("Walk/Run"), time: tr("Time"), pace: tr("Pace"), paused: tr("Paused") },
+    });
+  } catch (e) {
+    // the card is extra - never let it get in the way of tracking
+  }
+}
+
 function startTracking() {
   if (!("geolocation" in navigator)) {
     trackingErrorEl.textContent = tr("GPS isn't available on this device/browser.");
@@ -5729,6 +5749,7 @@ function startTracking() {
   session.polyline = L.polyline([], { color: "#22c55e", weight: 4 }).addTo(recordMap);
 
   startWatchingPosition();
+  updateWalkCard("tracking");
 }
 
 trackingPauseEl.addEventListener("click", () => {
@@ -5740,6 +5761,7 @@ trackingPauseEl.addEventListener("click", () => {
     session.isPaused = false;
     trackingPauseEl.textContent = tr("Pause");
     startWatchingPosition();
+    updateWalkCard("tracking");
   } else {
     session.isPaused = true;
     session.pausedAt = Date.now();
@@ -5747,6 +5769,7 @@ trackingPauseEl.addEventListener("click", () => {
     navigator.geolocation.clearWatch(session.watchId);
     clearInterval(session.timerId);
     letScreenSleep();
+    updateWalkCard("paused");
   }
 });
 
@@ -5802,6 +5825,7 @@ function stopTrackingWatchers() {
   if (session.watchId !== null) navigator.geolocation.clearWatch(session.watchId);
   if (session.timerId !== null) clearInterval(session.timerId);
   letScreenSleep();
+  updateWalkCard("ended");
 }
 
 // Returns the Record tab to its normal idle view (map preview + Start

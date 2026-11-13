@@ -509,6 +509,7 @@ window.FORJA_ES = Object.assign(window.FORJA_ES || {}, {
   "Keep Forja open on screen - distance isn't tracked while it's closed.": "Deja Forja abierta en pantalla: la distancia no se registra mientras está cerrada.",
   "GPS isn't available on this device/browser.": "El GPS no está disponible en este dispositivo o navegador.",
   "Resume": "Reanudar",
+  "Paused": "En pausa",
   "Location permission denied - allow it in your browser settings to track a route.": "No diste permiso de ubicación. Actívalo en los ajustes de tu navegador para grabar una ruta.",
   "Couldn't get your location. Check your GPS/location settings.": "No pudimos obtener tu ubicación. Revisa tu GPS o los ajustes de ubicación.",
   "Too slow to count toward today. Walk/run minutes need real movement.": "Demasiado lento para contar hoy. Los minutos de caminata o carrera necesitan movimiento real.",
