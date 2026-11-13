@@ -5639,8 +5639,13 @@ function startWatchingPosition() {
 // Phones without it (older iOS) just track the way they always did.
 let screenWakeLock = null;
 
+// The iPhone app records walks itself, screen locked or not (forja-app's
+// native.js sets this), so it needs neither the screen kept on nor the
+// warning below.
+const gpsWorksInBackground = () => window.forjaBackgroundGps === true;
+
 async function keepScreenOn() {
-  if (!("wakeLock" in navigator) || screenWakeLock) return;
+  if (!("wakeLock" in navigator) || screenWakeLock || gpsWorksInBackground()) return;
   try {
     const lock = await navigator.wakeLock.request("screen");
     // Paused or finished while the request was on its way, or a second
@@ -5673,7 +5678,7 @@ document.addEventListener("visibilitychange", () => {
     return;
   }
   keepScreenOn();
-  if (session.hiddenAt && Date.now() - session.hiddenAt >= TRACKING_GAP_WARN_MS) {
+  if (session.hiddenAt && Date.now() - session.hiddenAt >= TRACKING_GAP_WARN_MS && !gpsWorksInBackground()) {
     trackingErrorEl.textContent = tr("Keep Forja open on screen - distance isn't tracked while it's closed.");
   }
   session.hiddenAt = null;
